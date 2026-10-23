@@ -1,0 +1,2913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Keyvan Habibi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Keyvan Habibi, water engineer: physics-guided and explainable AI, digital twins and remote sensing for reservoir water quality.">
+<meta property="og:title" content="Keyvan Habibi">
+<meta property="og:description" content="Physics-guided and explainable AI for reservoir water quality, from the surface down.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..600;1,8..60,400&display=swap">
+<style>
+/* Layout: the page is one water column. You scroll from the surface (who I am) down through the
+   sensed layer, thermocline and chlorophyll maximum to the bed (contact); the ground darkens with depth. */
+:root {
+  /* dark-first: a reservoir at dusk in the Hajar mountains */
+  --bg: #061a22;
+  --bg-deep: #010609;
+  --raised: #0b2631;
+  --line: #1f4250;
+  --ink: #e4efee;
+  --ink-soft: #9db6b5;
+  --teal: #5cc8bc;
+  --chl: #a9cc5a;
+  --sand: #e3a85c;
+  --on-sand: #08202a;
+  --sky-top: #0a1c27;
+  --sky-low: #8a5733;
+  --hills: #0b171b;
+  --water-top: #1d6e76;
+  --water-deep: #03111a;
+  /* canvas labels and project scenes sit on water in both themes, so they keep one set */
+  --cv-text: #eef6f4;
+  --cv-sand: #f2c27b;
+  --cv-chl: #c6e27e;
+  --cv-halo: #020c11;
+  --scene-bg: #061c25;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --radius: 14px;
+  --wrap: 1120px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #eef4f3; --bg-deep: #c9dcdd; --raised: #ffffff; --line: #c8d9d9;
+    --ink: #0b2a33; --ink-soft: #456470; --teal: #0b6a64; --chl: #486a0b; --sand: #924f12; --on-sand: #ffffff;
+    --sky-top: #cfe5ea; --sky-low: #f1d9b3; --hills: #c99f72; --water-top: #23757c; --water-deep: #0b3d4d;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #eef4f3; --bg-deep: #c9dcdd; --raised: #ffffff; --line: #c8d9d9;
+  --ink: #0b2a33; --ink-soft: #456470; --teal: #0b6a64; --chl: #486a0b; --sand: #924f12; --on-sand: #ffffff;
+  --sky-top: #cfe5ea; --sky-low: #f1d9b3; --hills: #c99f72; --water-top: #23757c; --water-deep: #0b3d4d;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30;
+  background: var(--bg);
+}
+/* the ground darkens as you go deeper (opacity follows scroll) */
+.abyss {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--bg-deep) 60%, transparent) 0%, var(--bg-deep) 55%);
+  opacity: var(--progress, 0);
+}
+img, svg, canvas { max-width: 100%; }
+a { color: var(--teal); text-underline-offset: 3px; }
+a:hover { color: var(--sand); }
+:focus-visible { outline: 2px solid var(--sand); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.05; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.wrap {
+  max-width: var(--wrap); margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.skip {
+  position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: -60px; z-index: 40;
+  padding: 8px 12px; border-radius: 8px; background: var(--sand); color: var(--on-sand);
+  font-family: var(--font-mono); font-size: 0.85rem; text-decoration: none;
+}
+.skip:focus { top: calc(env(safe-area-inset-top, 0px) + 8px); color: var(--on-sand); }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--teal); display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+}
+.eyebrow::before { content: ""; width: 26px; height: 1px; background: currentColor; }
+.zone {
+  font-size: 0.66rem; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid currentColor; color: var(--ink-soft);
+}
+.zone.z-sand { color: var(--sand); }
+.zone.z-ink { color: var(--ink); }
+.zone.z-chl { color: var(--chl); }
+.zone.z-teal { color: var(--teal); }
+
+/* ---------- header ---------- */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in oklab, var(--bg) 82%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid color-mix(in oklab, var(--line) 60%, transparent);
+}
+.top .wrap { display: flex; align-items: center; gap: 18px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); flex: none; }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 0.95rem; color: var(--on-sand);
+  background: linear-gradient(160deg, var(--sand), color-mix(in oklab, var(--sand) 55%, var(--teal)));
+}
+.brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+.nav { display: flex; gap: 4px; margin-left: auto; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a {
+  font-family: var(--font-display); font-weight: 500; font-size: 0.92rem; text-decoration: none; color: var(--ink-soft);
+  padding: 7px 10px; border-radius: 8px; white-space: nowrap;
+}
+.nav a:focus-visible { outline-offset: -2px; }
+.nav a:hover, .nav a[aria-current="true"] { color: var(--ink); background: var(--raised); }
+.theme-btn {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
+  background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center;
+}
+.theme-btn:hover { border-color: var(--sand); }
+@media (max-width: 640px) {
+  .brand-name { display: none; }
+  .nav { -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent); mask-image: linear-gradient(90deg, #000 78%, transparent); }
+}
+
+/* ---------- depth gauge (wide screens) ---------- */
+.gauge {
+  position: fixed; left: max(20px, env(safe-area-inset-left, 0px)); top: 50%; transform: translateY(-50%);
+  z-index: 10; display: none; width: 150px;
+}
+@media (min-width: 1440px) { .gauge { display: block; } }
+.gauge ol { list-style: none; margin: 0; padding: 0 0 0 18px; position: relative; display: grid; gap: 26px; }
+.gauge ol::before {
+  content: ""; position: absolute; left: 3px; top: 6px; bottom: 6px; width: 1px;
+  background: linear-gradient(var(--sand), var(--line) 45%, var(--chl) 70%, var(--line));
+}
+.gauge-dot {
+  position: absolute; left: -1px; top: 0; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--sand); box-shadow: 0 0 0 4px color-mix(in oklab, var(--sand) 25%, transparent);
+  transform: translateY(var(--dot-y, 4px)); transition: transform 0.25s ease;
+}
+.gauge a { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-soft); text-decoration: none; display: block; line-height: 1.3; }
+.gauge a span { display: block; color: var(--ink); font-size: 0.78rem; }
+.gauge a[aria-current="true"] span { color: var(--sand); }
+
+/* ---------- hero ---------- */
+.hero .wrap {
+  display: grid; gap: clamp(28px, 4vw, 56px); padding-block: clamp(36px, 6vw, 80px) clamp(28px, 4vw, 48px);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 980px) { .hero .wrap { grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr); align-items: center; } }
+.hero h1 {
+  font-size: clamp(3.1rem, 8.4vw, 6.4rem); font-weight: 800; letter-spacing: -0.035em; margin-top: 18px;
+  font-variation-settings: "opsz" 96;
+}
+.hero h1 .light { font-weight: 400; color: var(--ink-soft); }
+.lead { font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.55; margin-top: 22px; max-width: 34em; }
+.lead em { font-style: normal; color: var(--sand); }
+.avail {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; font-family: var(--font-display); font-weight: 500;
+  font-size: 0.95rem; color: var(--ink); padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px;
+  background: color-mix(in oklab, var(--raised) 70%, transparent);
+}
+.pulse { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--chl); animation: pulse 2.4s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--chl) 60%, transparent); } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.btn {
+  font-family: var(--font-display); font-weight: 700; font-size: 1rem; text-decoration: none;
+  padding: 12px 20px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn-primary { background: var(--sand); color: var(--on-sand); }
+.btn-primary:hover { color: var(--on-sand); background: color-mix(in oklab, var(--sand) 85%, var(--ink)); }
+.btn-ghost { border: 1px solid var(--line); color: var(--ink); }
+.btn-ghost:hover { border-color: var(--teal); color: var(--ink); }
+.links-row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 22px; font-family: var(--font-display); font-size: 0.92rem; }
+.links-row a { color: var(--ink-soft); }
+.links-row a:hover { color: var(--sand); }
+
+.column-fig { margin: 0; min-width: 0; }
+.column-frame {
+  position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--line);
+  height: clamp(360px, 48vw, 540px);
+  box-shadow: 0 30px 80px -30px color-mix(in oklab, var(--bg-deep) 80%, transparent);
+}
+.column-frame canvas, .card-media canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.column-fig figcaption { font-size: 0.86rem; color: var(--ink-soft); margin-top: 12px; line-height: 1.5; }
+.column-fig figcaption b { color: var(--ink); font-weight: 600; }
+
+/* ---------- stats ---------- */
+.stats .wrap { padding-block: 8px 24px; }
+.stat-row {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius);
+  background: color-mix(in oklab, var(--raised) 75%, transparent);
+}
+.stat { padding: 20px 22px; display: grid; gap: 4px; align-content: start; }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat b { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; line-height: 1; color: var(--sand); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.92rem; color: var(--ink-soft); line-height: 1.4; }
+@media (max-width: 760px) {
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-left: 0; }
+  .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+
+/* ---------- sections ---------- */
+section.band { padding-block: clamp(56px, 8vw, 104px) 0; scroll-margin-top: 70px; }
+.sec-head { display: grid; gap: 14px; margin-bottom: clamp(26px, 4vw, 44px); max-width: 46rem; }
+.sec-head h2 { font-size: clamp(2rem, 4.4vw, 3rem); font-weight: 750; letter-spacing: -0.02em; }
+.sec-head p:not(.eyebrow) { color: var(--ink-soft); font-size: 1.08rem; max-width: 40em; }
+
+/* research themes */
+.themes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.theme { padding: 26px 26px 28px 0; border-bottom: 1px solid var(--line); display: grid; gap: 10px; align-content: start; }
+.theme:nth-child(odd) { padding-right: 34px; border-right: 1px solid var(--line); }
+.theme:nth-child(even) { padding-left: 34px; }
+.theme h3 { font-size: 1.35rem; font-weight: 700; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.theme h3 .mono { font-family: var(--font-mono); font-size: 0.75rem; color: var(--chl); font-weight: 500; letter-spacing: 0.08em; }
+.theme p { color: var(--ink-soft); }
+@media (max-width: 760px) {
+  .themes { grid-template-columns: minmax(0, 1fr); }
+  .theme, .theme:nth-child(odd), .theme:nth-child(even) { padding: 22px 0; border-right: 0; }
+}
+
+/* projects */
+.projects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 860px) { .projects { grid-template-columns: minmax(0, 1fr); } }
+.card {
+  position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  padding: 24px; border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden;
+  background: linear-gradient(180deg, var(--raised), color-mix(in oklab, var(--raised) 60%, var(--bg)));
+  transition: border-color 0.2s ease;
+}
+.card:hover { border-color: color-mix(in oklab, var(--teal) 60%, var(--line)); }
+.card-media {
+  position: relative; margin: -24px -24px 6px; height: 210px; background: var(--scene-bg);
+  border-bottom: 1px solid var(--line);
+}
+@media (max-width: 420px) { .card-media { height: 200px; } }
+.card > p { flex: 1 0 auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 6px;
+  border: 1px solid var(--line); color: var(--ink-soft); max-width: 100%; overflow-wrap: anywhere;
+}
+.chip.pub { color: var(--chl); border-color: color-mix(in oklab, var(--chl) 45%, var(--line)); }
+.chip.prep { color: var(--sand); border-color: color-mix(in oklab, var(--sand) 45%, var(--line)); }
+.card h3 { font-size: 1.32rem; font-weight: 700; letter-spacing: -0.01em; }
+.card p { color: var(--ink-soft); font-size: 0.98rem; }
+.figure-area { border-top: 1px dashed var(--line); padding-top: 16px; display: grid; align-content: center; }
+.nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.num b { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.85rem; color: var(--ink); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.num span { font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-soft); letter-spacing: 0.02em; }
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .lbl { font-family: var(--font-mono); font-size: 8.5px; fill: var(--ink-soft); }
+.chart .val { font-family: var(--font-mono); font-size: 9px; fill: var(--ink); font-weight: 500; }
+.chart .in-bar { fill: var(--on-sand); }
+.chart .in-teal { fill: var(--bg); }
+@media (max-width: 560px) { .chart .lbl { font-size: 10.5px; } .chart .val { font-size: 11px; } }
+.chart .track { fill: color-mix(in oklab, var(--line) 55%, transparent); }
+.chart .bar-a { fill: var(--teal); }
+.chart .bar-b { fill: var(--sand); }
+.chart .bar-c { fill: var(--chl); }
+.chart .tick { stroke: var(--line); stroke-width: 1; }
+.card-foot { font-family: var(--font-mono); font-size: 0.8rem; display: flex; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; color: var(--ink-soft); }
+
+/* collaborators */
+.collab {
+  margin-top: 28px; padding: 18px 22px; border-radius: var(--radius); border: 1px dashed var(--line);
+  color: var(--ink-soft); font-size: 1rem;
+}
+.collab b { color: var(--ink); font-weight: 600; }
+
+/* publications: the chlorophyll-maximum zone glows faintly, like the hero band */
+#publications { background: linear-gradient(180deg, transparent 0, color-mix(in oklab, var(--chl) 7%, transparent) 160px, transparent 460px); }
+.pub-group + .pub-group { margin-top: 38px; }
+.pub-group h3, .side-block h3 {
+  font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); margin-bottom: 10px;
+}
+.pub-list { list-style: none; margin: 0; padding: 0; }
+.pub-list li { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 18px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.pub-list .when { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-soft); padding-top: 3px; }
+.pub-list .when.chip { justify-self: start; align-self: start; padding: 2px 7px; font-size: 0.7rem; }
+.pub-list .ref { font-size: 0.98rem; line-height: 1.55; min-width: 0; overflow-wrap: anywhere; }
+.pub-list .ref b { font-weight: 600; }
+.badge { font-family: var(--font-mono); font-size: 0.7rem; padding: 2px 7px; border-radius: 5px; margin-left: 6px; white-space: nowrap; background: color-mix(in oklab, var(--chl) 16%, transparent); color: var(--chl); }
+.pub-note { color: var(--ink-soft); font-size: 0.95rem; margin-top: 12px; }
+@media (max-width: 560px) { .pub-list li { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+
+/* experience timeline */
+.cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: clamp(28px, 5vw, 64px); }
+@media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.timeline { list-style: none; margin: 0; padding: 0; position: relative; align-self: start; }
+.timeline::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 1px; background: var(--line); }
+.timeline li { position: relative; padding: 0 0 30px 34px; display: grid; gap: 6px; }
+.timeline li:last-child { padding-bottom: 0; }
+.timeline li::before {
+  content: ""; position: absolute; left: 0; top: 7px; width: 13px; height: 13px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--teal);
+}
+.timeline li.now::before { background: var(--sand); border-color: var(--sand); }
+.timeline li.cur::before { border-color: var(--sand); }
+.timeline .when { font-family: var(--font-mono); font-size: 0.78rem; color: var(--sand); letter-spacing: 0.04em; }
+.timeline h3 { font-size: 1.18rem; font-weight: 700; }
+.timeline .org { color: var(--ink-soft); font-size: 0.97rem; }
+.timeline p { font-size: 0.97rem; color: var(--ink-soft); }
+.timeline .note { color: var(--ink); font-style: italic; }
+.side-block + .side-block { margin-top: 34px; }
+.edu { display: grid; gap: 4px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.edu:last-child { border-bottom: 0; margin-bottom: 0; }
+.edu b { font-family: var(--font-display); font-size: 1.08rem; }
+.edu span { color: var(--ink-soft); font-size: 0.95rem; }
+.edu .when { font-family: var(--font-mono); font-size: 0.78rem; color: var(--sand); }
+.plain-list { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 0.95rem; display: grid; gap: 6px; }
+
+/* skills */
+.skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 980px) { .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .skills { grid-template-columns: minmax(0, 1fr); } }
+.skill-col h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; }
+.tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.tag { font-family: var(--font-mono); font-size: 0.76rem; padding: 5px 9px; border-radius: 6px; background: var(--raised); border: 1px solid var(--line); color: var(--ink); }
+
+/* contact */
+.contact { padding-bottom: clamp(56px, 8vw, 96px); }
+.contact-box {
+  border-radius: 22px; padding: clamp(28px, 5vw, 56px); border: 1px solid var(--line);
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in oklab, var(--teal) 18%, transparent), transparent 60%),
+    radial-gradient(90% 120% at 0% 100%, color-mix(in oklab, var(--chl) 12%, transparent), transparent 60%),
+    var(--raised);
+  display: grid; gap: 22px;
+}
+.contact-box h2 { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: -0.03em; max-width: 16em; }
+.contact-box p:not(.eyebrow) { color: var(--ink-soft); max-width: 40em; font-size: 1.08rem; }
+.email-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.email {
+  font-family: var(--font-mono); font-size: clamp(0.95rem, 2.4vw, 1.2rem); padding: 12px 16px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--line); color: var(--ink); user-select: all; overflow-wrap: anywhere;
+}
+.copy-btn {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; padding: 12px 16px; border-radius: 10px;
+  border: 0; background: var(--sand); color: var(--on-sand); cursor: pointer;
+}
+.copy-btn:hover { background: color-mix(in oklab, var(--sand) 85%, var(--ink)); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.profile-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.profile-links a {
+  font-family: var(--font-display); font-size: 0.92rem; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--ink); text-decoration: none;
+}
+.profile-links a:hover { border-color: var(--teal); color: var(--teal); }
+footer { border-top: 1px solid var(--line); }
+footer .wrap { padding-block: 22px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .pulse { animation: none; }
+  .btn, .card, .gauge-dot { transition: none; }
+  .btn:hover { transform: none; }
+}
+</style>
+<script>try { var t = localStorage.getItem('kh-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+<a class="skip" href="#top">Skip to content</a>
+<div class="abyss" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Keyvan Habibi, back to top">
+      <span class="brand-mark" aria-hidden="true">KH</span>
+      <span class="brand-name">Keyvan Habibi</span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#research">Research</a>
+      <a href="#projects">Projects</a>
+      <a href="#publications">Publications</a>
+      <a href="#experience">Experience</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+
+<aside class="gauge" aria-label="Page depth">
+  <ol>
+    <li class="gauge-dot" aria-hidden="true"></li>
+    <li><a href="#top">surface<span>About</span></a></li>
+    <li><a href="#research">sensed layer<span>Research</span></a></li>
+    <li><a href="#projects">thermocline<span>Projects</span></a></li>
+    <li><a href="#publications">chlorophyll max<span>Publications</span></a></li>
+    <li><a href="#experience">hypolimnion<span>Experience</span></a></li>
+    <li><a href="#contact">reservoir bed<span>Contact</span></a></li>
+  </ol>
+</aside>
+
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Water engineer (MSc) · Research Assistant, Sultan Qaboos University</p>
+        <h1 id="hero-title">Keyvan <span class="light">Habibi</span></h1>
+        <p class="lead">I build physics-guided and explainable AI for reservoir water quality, from satellite pixels at the surface to <em>CTD profiles at depth</em>. My field data come from the Wadi Dayqah Dam reservoir in Oman.</p>
+        <p class="avail"><span class="pulse" aria-hidden="true"></span>Available to start a full-time PhD in 2027</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#projects">Explore my projects</a>
+          <a class="btn btn-ghost" href="#contact">Get in touch</a>
+          <a class="btn btn-ghost" id="cv-link" href="Keyvan_Habibi_CV.pdf" target="_blank" rel="noopener">Download CV</a>
+        </div>
+        <div class="links-row">
+          <a href="https://scholar.google.com/citations?user=H_IV0a8AAAAJ" target="_blank" rel="noopener">Google Scholar</a>
+          <a href="https://orcid.org/0000-0002-5925-9194" target="_blank" rel="noopener">ORCID</a>
+          <a href="https://www.linkedin.com/in/keyvan-habibi-5b5789125/" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/k1habibi" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+      <figure class="column-fig">
+        <div class="column-frame">
+          <canvas id="column" role="img" aria-label="Animated cross-section of a stratified reservoir. A drone above the water sees only the top optical depth, while a CTD profiler lowered from a boat measures down to the chlorophyll maximum, a median 3.4 to 3.9 optical depths deep."></canvas>
+        </div>
+        <figcaption><b>Seeing beneath the surface.</b> At Wadi Dayqah the median depth of the chlorophyll maximum was 3.4 to 3.9 optical depths across surveys, far below the layer a drone or satellite can see. Only the sensed layer and the chlorophyll-maximum depths come from data; the thermocline position and the profile trace are illustrative. Move your pointer over the water to steer the drone and the profiler.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stats" aria-label="At a glance">
+    <div class="wrap">
+      <div class="stat-row">
+        <div class="stat"><b>3</b><span>Q1 journal articles in 2026, two as first author</span></div>
+        <div class="stat"><b>3</b><span>first-author manuscripts in preparation</span></div>
+        <div class="stat"><b>7</b><span>conference papers</span></div>
+        <div class="stat"><b>2 yrs</b><span>operating the water distribution system of a city of 11,000 people</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="research" aria-labelledby="research-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span class="zone z-sand">sensed layer</span>Data-scarce arid reservoirs</p>
+        <h2 id="research-title">What I work on</h2>
+        <p>Reservoirs in arid regions are monitored with few sensors and short records. I build models that make the most of that data, respect the physics of a stratified water column and say how sure they are.</p>
+      </div>
+      <div class="themes">
+        <article class="theme">
+          <h3>Physics-guided causal deep learning <span class="mono">DAG</span></h3>
+          <p>Networks shaped by known cause and effect, so predictions keep physically sensible responses and come with calibrated uncertainty.</p>
+        </article>
+        <article class="theme">
+          <h3>Explainable water quality indices <span class="mono">XAI</span></h3>
+          <p>Indices whose weights and class decisions trace back to the indicators that drive them, using SHAP and LIME.</p>
+        </article>
+        <article class="theme">
+          <h3>Reservoir digital twins <span class="mono">3D + t</span></h3>
+          <p>Time-varying three-dimensional models of a stratified supply reservoir, built from repeated CTD profiling campaigns.</p>
+        </article>
+        <article class="theme">
+          <h3>Remote sensing below the surface <span class="mono">UAV · S2</span></h3>
+          <p>Drone multispectral and thermal imagery, Sentinel-2 and Landsat linked to profiler casts to estimate chlorophyll the sensors cannot see.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="projects" aria-labelledby="projects-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span class="zone z-ink">thermocline</span>Five first-author studies · one co-authored</p>
+        <h2 id="projects-title">Projects</h2>
+        <p>From my research assistantship with the group of Dr Mohammad Reza Nikoo at Sultan Qaboos University. Each animation sketches the idea of a study; the numbers come from the papers and manuscripts.</p>
+      </div>
+      <div class="projects">
+
+        <article class="card">
+          <div class="card-media"><canvas data-scene="joh" role="img" aria-label="Animated sketch of the soft-causal ensemble model."></canvas></div>
+          <div class="chips"><span class="chip pub">Journal of Hydrology · 2026</span><span class="chip">Q1 · first author</span></div>
+          <h3>A soft-causal ensemble for probabilistic water quality</h3>
+          <p>A physics-informed, soft-causal ensemble of deep neural networks that gives robust probabilistic water quality assessments for a reservoir in an arid region.</p>
+          <div class="figure-area">
+            <div class="nums">
+              <div class="num"><b>16,096</b><span>CTD field measurements</span></div>
+              <div class="num"><b>20</b><span>stations, 2023</span></div>
+            </div>
+          </div>
+          <div class="card-foot"><a href="https://doi.org/10.1016/j.jhydrol.2026.136466" target="_blank" rel="noopener">doi.org/10.1016/j.jhydrol.2026.136466</a></div>
+        </article>
+
+        <article class="card">
+          <div class="card-media"><canvas data-scene="envdev" role="img" aria-label="Animated sketch of the 3D digital twin and explainable water quality index."></canvas></div>
+          <div class="chips"><span class="chip pub">Environmental Development · 2026</span><span class="chip">Q1 · first author</span></div>
+          <h3>Explainable water quality index and a 3D digital twin</h3>
+          <p>A water quality index built with explainable AI and a time-varying 3D digital twin of the Wadi Dayqah Dam reservoir. It showed that one weighting scheme does not hold across time, depth and location.</p>
+          <div class="figure-area">
+            <div class="nums">
+              <div class="num"><b>31,322</b><span>CTD measurement points</span></div>
+              <div class="num"><b>12</b><span>months of profiling</span></div>
+            </div>
+          </div>
+          <div class="card-foot"><a href="https://doi.org/10.1016/j.envdev.2026.101464" target="_blank" rel="noopener">doi.org/10.1016/j.envdev.2026.101464</a></div>
+        </article>
+
+        <article class="card">
+          <div class="card-media"><canvas data-scene="wr" role="img" aria-label="Animated sketch of the transferable chlorophyll-a pipeline."></canvas></div>
+          <div class="chips"><span class="chip prep">Water Research · to be submitted</span><span class="chip">first author</span></div>
+          <h3>A transferable pipeline for chlorophyll-a</h3>
+          <p>A soft-causal, physics-guided deep learning pipeline built on 1,012 Mexican inland-water stations and re-run on an Omani reservoir. Its predictions stayed physically plausible far more often than those of tree ensembles.</p>
+          <div class="figure-area">
+            <svg class="chart" viewBox="0 0 320 84" role="img" aria-label="Share of nowcast bins outside an assumed temperature-response envelope: this pipeline 5.5 percent, tree ensembles 20 to 38 percent.">
+              <text class="lbl" x="0" y="11">nowcast bins outside the envelope, % (0 to 40)</text>
+              <text class="lbl" x="0" y="35">This pipeline</text>
+              <rect class="track" x="104" y="26" width="200" height="12" rx="3"/>
+              <rect class="bar-a" x="104" y="26" width="27.5" height="12" rx="3"/>
+              <text class="val" x="136" y="35.5">5.5%</text>
+              <text class="lbl" x="0" y="63">Tree ensembles</text>
+              <rect class="track" x="104" y="54" width="200" height="12" rx="3"/>
+              <rect class="bar-b" x="204" y="54" width="90" height="12" rx="3"/>
+              <text class="val in-bar" x="249" y="63.5" text-anchor="middle">20–38%</text>
+              <line class="tick" x1="104" y1="74" x2="304" y2="74"/>
+              <text class="lbl" x="104" y="84" text-anchor="middle">0</text>
+              <text class="lbl" x="204" y="84" text-anchor="middle">20</text>
+              <text class="lbl" x="304" y="84" text-anchor="middle">40</text>
+            </svg>
+          </div>
+          <div class="card-foot"><span>4,163 Mexican samples · 8,810 reservoir depth bins from 17 campaigns</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-media"><canvas data-scene="jcp" role="img" aria-label="Animated sketch of indicators being dropped from the CCME index."></canvas></div>
+          <div class="chips"><span class="chip prep">J. Cleaner Production · to be submitted</span><span class="chip">first author</span></div>
+          <h3>Dropping indicators biases the CCME index</h3>
+          <p>A Canadian (CCME) water quality index recomputed from three of seven indicators matched only 57% of the full index's classes. An evidence-anchored reduced index matched 97%, provided light was still measured in each profile.</p>
+          <div class="figure-area">
+            <svg class="chart" viewBox="0 0 320 84" role="img" aria-label="Agreement with the full index classes: three of seven indicators 57 percent, anchored reduced index 97 percent.">
+              <text class="lbl" x="0" y="11">agreement with full-index classes, % (0 to 100)</text>
+              <text class="lbl" x="0" y="35">3 of 7 indicators</text>
+              <rect class="track" x="112" y="26" width="192" height="12" rx="3"/>
+              <rect class="bar-b" x="112" y="26" width="109.4" height="12" rx="3"/>
+              <text class="val" x="226" y="35.5">57%</text>
+              <text class="lbl" x="0" y="63">Anchored index</text>
+              <rect class="track" x="112" y="54" width="192" height="12" rx="3"/>
+              <rect class="bar-a" x="112" y="54" width="186.2" height="12" rx="3"/>
+              <text class="val in-teal" x="292" y="63.5" text-anchor="end">97%</text>
+              <line class="tick" x1="112" y1="74" x2="304" y2="74"/>
+              <text class="lbl" x="112" y="84" text-anchor="middle">0</text>
+              <text class="lbl" x="208" y="84" text-anchor="middle">50</text>
+              <text class="lbl" x="304" y="84" text-anchor="middle">100</text>
+            </svg>
+          </div>
+          <div class="card-foot"><span>684 depth layers · 17 profiler surveys · 127 indicator subsets tested</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-media"><canvas data-scene="rse" role="img" aria-label="Animated sketch of how deep remote sensing can see."></canvas></div>
+          <div class="chips"><span class="chip prep">Remote Sensing of Environment · in preparation</span><span class="chip">first author</span></div>
+          <h3>How deep can remote sensing see?</h3>
+          <p>Five drone multispectral and thermal surveys, Sentinel-2 and Landsat imagery and 501 CTD casts. In this reservoir about 90% of the chlorophyll in the sunlit layer lay below what the sensors see.</p>
+          <div class="figure-area">
+            <svg class="chart" viewBox="0 0 320 70" role="img" aria-label="Chlorophyll in the sunlit layer: about 10 percent within the sensed layer, about 90 percent below it.">
+              <text class="lbl" x="0" y="11">chlorophyll in the sunlit layer, %</text>
+              <rect class="bar-a" x="0" y="22" width="30" height="16" rx="3"/>
+              <rect class="bar-c" x="32" y="22" width="268" height="16" rx="3"/>
+              <text class="val" x="0" y="54">≈10% seen</text>
+              <text class="val" x="300" y="54" text-anchor="end">≈90% below the sensed layer</text>
+              <text class="lbl" x="0" y="68">0</text>
+              <text class="lbl" x="300" y="68" text-anchor="end">100</text>
+            </svg>
+          </div>
+          <div class="card-foot"><span>DJI Matrice 200 V2 · MicaSense Altum · conformal uncertainty</span></div>
+        </article>
+
+        <article class="card">
+          <div class="card-media"><canvas data-scene="ecm" role="img" aria-label="Animated sketch of a multi-dam pumped-storage system."></canvas></div>
+          <div class="chips"><span class="chip pub">Energy Conversion and Management · 2026</span><span class="chip">Q1 · co-author</span></div>
+          <h3>Hydro-economic optimisation of multi-dam pumped storage</h3>
+          <p>A novel multi-dam pumped-storage system optimised for energy arbitrage and water-supply reliability in arid regions. I contributed to reviewing and editing the study.</p>
+          <div class="card-foot"><a href="https://doi.org/10.1016/j.enconman.2026.121283" target="_blank" rel="noopener">doi.org/10.1016/j.enconman.2026.121283</a><span>IF 11.8</span></div>
+        </article>
+
+      </div>
+      <p class="collab">My co-authors include <b>R. Kerachian</b>, <b>J. Šimůnek</b>, <b>A.H. Gandomi</b>, <b>A. Mishra</b> and <b>R. Nazari</b>; my research assistantship at Sultan Qaboos University is supervised by <b>Dr M.R. Nikoo</b>.</p>
+    </div>
+  </section>
+
+  <section class="band" id="publications" aria-labelledby="pubs-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span class="zone z-chl">chlorophyll maximum</span>3 Q1 articles in 2026</p>
+        <h2 id="pubs-title">Publications</h2>
+        <p>New papers and citations appear on <a href="https://scholar.google.com/citations?user=H_IV0a8AAAAJ" target="_blank" rel="noopener">Google Scholar</a>.</p>
+      </div>
+
+      <div class="pub-group">
+        <h3>Peer-reviewed journal articles</h3>
+        <ol class="pub-list">
+          <li><span class="when">2026</span><p class="ref"><b>Habibi K</b>, Nikoo MR, Kerachian R, Nazari R, Šimůnek J, Gandomi AH. A physics-informed, soft-causal ensemble deep neural network for robust probabilistic water quality assessment in arid regions. <i>Journal of Hydrology</i> 680, 136466. <a href="https://doi.org/10.1016/j.jhydrol.2026.136466" target="_blank" rel="noopener">DOI</a><span class="badge">Q1 · IF 7.3</span></p></li>
+          <li><span class="when">2026</span><p class="ref"><b>Habibi K</b>, Nikoo MR, Afzali SH, Nazari R, Mishra A, Kerachian R, Šimůnek J, Gandomi AH. Developing a water quality index for reservoirs using explainable AI and a time-varying 3D digital twin: a case study, Wadi Dayqah Dam, Oman. <i>Environmental Development</i> 59, 101464. <a href="https://doi.org/10.1016/j.envdev.2026.101464" target="_blank" rel="noopener">DOI</a><span class="badge">Q1 · IF 5.3</span></p></li>
+          <li><span class="when">2026</span><p class="ref">Karimi A, Nikoo MR, Hoseini Karani MM, Al-Saadi SN, <b>Habibi K</b>. Hydro-economic optimization of a novel multi-dam pumped-storage system for energy arbitrage and water-supply reliability in arid regions. <i>Energy Conversion and Management</i> 356, 121283. <a href="https://doi.org/10.1016/j.enconman.2026.121283" target="_blank" rel="noopener">DOI</a><span class="badge">Q1 · IF 11.8</span></p></li>
+        </ol>
+      </div>
+
+      <div class="pub-group">
+        <h3>Manuscripts in preparation</h3>
+        <ol class="pub-list">
+          <li><span class="when chip prep">to be submitted</span><p class="ref"><b>Habibi K</b>, Nikoo MR, Shahvaran AR, Kerachian R, Nazari R, Šimůnek J. A transferable soft-causal, physics-guided deep learning pipeline for chlorophyll-a prediction: nutrient effects, calibration and physical consistency in Mexican inland waters and an Omani reservoir. <i>Water Research</i>.</p></li>
+          <li><span class="when chip prep">to be submitted</span><p class="ref"><b>Habibi K</b>, Nikoo MR, Afzali SH, Nazari R, Chen M, Shahvaran AR. Dropping indicators biases the CCME water quality index: evidence-anchored reduction for monitoring a stratified supply reservoir. <i>Journal of Cleaner Production</i>.</p></li>
+          <li><span class="when chip prep">in preparation</span><p class="ref"><b>Habibi K</b>, Nikoo MR, Shahvaran AR, Kerachian R. How deep can remote sensing see? Drone, satellite, and AI-agent evidence on hidden chlorophyll. <i>Remote Sensing of Environment</i>.</p></li>
+          <li><span class="when chip prep">in preparation</span><p class="ref">Shahvaran AR, Saravani MJ, Saadatpour M, <b>Habibi K</b>. Half a century of inland water trophic state assessment: a review. <i>Journal of Hydrology</i>.</p></li>
+        </ol>
+      </div>
+
+      <div class="pub-group">
+        <h3>Conference papers</h3>
+        <ol class="pub-list">
+          <li><span class="when">2022</span><p class="ref"><b>Habibi K</b>, Afzali SH. ANFIS against LSTM: precipitation time series forecasting. <i>6th Int. Conf. on Researches in Science &amp; Engineering &amp; 3rd Int. Congress on Civil, Architecture and Urbanism in Asia</i>, Thailand.</p></li>
+          <li><span class="when">2022</span><p class="ref"><b>Habibi K</b>, Afzali SH. Environmental impact assessment using TSK-FRBS and lookup table. <i>6th Int. Conf. on Researches in Science &amp; Engineering &amp; 3rd Int. Congress on Civil, Architecture and Urbanism in Asia</i>, Thailand.</p></li>
+          <li><span class="when">2020</span><p class="ref"><b>Habibi K</b>, Afzali SH. Optimizing fire hydrant layout based on uncertainty analysis. <i>6th Int. Reliability and Safety Engineering Conf.</i>, Iran.</p></li>
+          <li><span class="when">2020</span><p class="ref"><b>Habibi K</b>, Afzali SH. Immunization of water distribution networks against terrorist attacks. <i>6th Int. Reliability and Safety Engineering Conf.</i>, Iran.</p></li>
+        </ol>
+        <p class="pub-note">Seven conference papers in total; the four international papers where I am first author are listed here.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="experience" aria-labelledby="exp-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span class="zone z-teal">hypolimnion</span>Research · water utility · construction</p>
+        <h2 id="exp-title">Experience and education</h2>
+        <p>Research first, plus hands-on utility and construction work. I have run a real distribution network as well as modelled one.</p>
+      </div>
+      <div class="cols">
+        <ol class="timeline">
+          <li class="now">
+            <span class="when">January 2025 – present</span>
+            <h3>Research Assistant (remote)</h3>
+            <span class="org">Sultan Qaboos University, Oman · group of Dr Mohammad Reza Nikoo</span>
+            <p>Physics-guided and causal deep learning, explainable AI, digital twins and remote sensing for reservoir water quality, with field data from the Wadi Dayqah Dam reservoir and transfer tests on 1,012 Mexican stations.</p>
+          </li>
+          <li class="cur">
+            <span class="when">2026 – present</span>
+            <h3>Founder and CEO</h3>
+            <span class="org">Tavan Vira Niroo Sazeh, Iran</span>
+            <p>A contracting company for water supply, canal and utility construction projects.</p>
+            <p class="note">All my company activities will be suspended for the full duration of the PhD.</p>
+          </li>
+          <li>
+            <span class="when">2023 – 2025</span>
+            <h3>Operation Supervisor</h3>
+            <span class="org">Fars Province Water and Wastewater Company (ABFA), Iran</span>
+            <p>Operated and managed the water distribution system of a city of 11,000 people, supervised field crews in daily inspection of water and wastewater facilities, and worked on a machine-vision project for automatic water-meter reading.</p>
+          </li>
+          <li>
+            <span class="when">2020 – 2021</span>
+            <h3>Teaching Assistant</h3>
+            <span class="org">Shiraz University</span>
+            <p>Fluid Mechanics, Hydraulics and Advanced Hydraulics, with Prof. S.H. Afzali.</p>
+          </li>
+          <li>
+            <span class="when">2017 – 2018</span>
+            <h3>Construction Intern</h3>
+            <span class="org">Rad Shahr Aftab Inc. and Mohandesin Tarh Saze Inc., Iran</span>
+          </li>
+        </ol>
+        <div>
+          <div class="side-block">
+            <h3>Education</h3>
+            <div class="edu">
+              <span class="when">2019 – 2022</span>
+              <b>MSc Civil Engineering, Water and Hydraulic Structures</b>
+              <span>Shiraz University. CGPA 15.49/20 (same-year cohort mean in the specialisation: 13.73/20); thesis graded Excellent; degree awarded 10 September 2022.</span>
+              <span>Thesis: environmental impact screening with a GA/PSO-optimised Takagi–Sugeno–Kang neuro-fuzzy network and metaheuristic feature selection (Cohen's kappa up to 0.95). Supervisor: Prof. S.H. Afzali.</span>
+            </div>
+            <div class="edu">
+              <span class="when">2014 – 2019</span>
+              <b>BSc Civil Engineering</b>
+              <span>Persian Gulf University, Bushehr</span>
+            </div>
+          </div>
+          <div class="side-block">
+            <h3>Honours and membership</h3>
+            <ul class="plain-list">
+              <li>Top 6% in the Iranian national MSc entrance examination (2019)</li>
+              <li>Top 5% in the Iranian national BSc entrance examination (2014)</li>
+              <li>Governmental scholarship for the MSc programme, Shiraz University</li>
+              <li>Certificates of Appreciation from the CEO of Fars Province Water and Wastewater Company (2023, 2024)</li>
+              <li>Letter of Appreciation from the Ministry of Energy, Iran</li>
+              <li>Member of the Iranian Construction Engineering Organization</li>
+            </ul>
+          </div>
+          <div class="side-block">
+            <h3>Languages</h3>
+            <ul class="plain-list">
+              <li>English: fluent, the working language of all my research, publications and international collaboration. My TOEFL iBT test, booked for 5 September 2026, was cancelled by the test provider in Iran; a score will be provided as soon as a new test can be taken.</li>
+              <li>Persian: native</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="skills" aria-labelledby="skills-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow"><span class="zone">benthic layer</span>Methods, code and data</p>
+        <h2 id="skills-title">Skills</h2>
+      </div>
+      <div class="skills">
+        <div class="skill-col">
+          <h3>Machine learning</h3>
+          <div class="tags"><span class="tag">physics-informed DL</span><span class="tag">causal DL</span><span class="tag">ensembles</span><span class="tag">probabilistic prediction</span><span class="tag">transfer learning</span><span class="tag">LSTM</span><span class="tag">SHAP · LIME</span><span class="tag">uncertainty quantification</span><span class="tag">conformal prediction</span></div>
+        </div>
+        <div class="skill-col">
+          <h3>Optimisation and decision</h3>
+          <div class="tags"><span class="tag">GA</span><span class="tag">PSO</span><span class="tag">NSGA-II</span><span class="tag">ACO</span><span class="tag">SA</span><span class="tag">fuzzy TOPSIS</span><span class="tag">ANFIS</span><span class="tag">Takagi–Sugeno–Kang</span></div>
+        </div>
+        <div class="skill-col">
+          <h3>Programming</h3>
+          <div class="tags"><span class="tag">Python</span><span class="tag">TensorFlow · Keras</span><span class="tag">scikit-learn</span><span class="tag">XGBoost</span><span class="tag">LightGBM</span><span class="tag">CatBoost</span><span class="tag">MATLAB</span><span class="tag">R</span></div>
+        </div>
+        <div class="skill-col">
+          <h3>Data</h3>
+          <div class="tags"><span class="tag">CTD profiles</span><span class="tag">GEMStat</span><span class="tag">UAV multispectral</span><span class="tag">UAV thermal</span><span class="tag">Sentinel-2</span><span class="tag">Landsat</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band contact" id="contact" aria-labelledby="contact-title">
+    <div class="wrap">
+      <div class="contact-box">
+        <p class="eyebrow"><span class="zone z-sand">reservoir bed</span>PhD from 2027</p>
+        <h2 id="contact-title">Looking for a PhD student who knows water from the pipe to the model?</h2>
+        <p>I am open to fully funded PhD positions starting in 2027 in water quality, hydroinformatics, environmental AI and remote sensing. The quickest way to reach me is email.</p>
+        <div class="email-row">
+          <span class="email" id="email">keyvan.habibi.10@gmail.com</span>
+          <button class="copy-btn" id="copy-btn" type="button">Copy email</button>
+          <span class="sr-only" id="copy-status" role="status"></span>
+        </div>
+        <div class="profile-links">
+          <a href="https://scholar.google.com/citations?user=H_IV0a8AAAAJ" target="_blank" rel="noopener">Google Scholar</a>
+          <a href="https://orcid.org/0000-0002-5925-9194" target="_blank" rel="noopener">ORCID</a>
+          <a href="https://www.linkedin.com/in/keyvan-habibi-5b5789125/" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/k1habibi" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Keyvan Habibi · Shiraz, Iran</span>
+    <span>Field data: Wadi Dayqah Dam reservoir, Oman</span>
+  </div>
+</footer>
+
+<script>
+/* ---- scene: joh ---- */
+/* Soft-causal ensemble (Journal of Hydrology 2026).
+   Left: the DAG from Table 4 of the paper (7 CTD variables -> WQI), with the
+   L2-penalised direct confounder path drawn dashed. Right: the 5-member deep
+   ensemble of Gaussian predictive densities (shapes illustrative), the combined
+   95% interval, and one observation dropping inside it. */
+(function () {
+  window.KHAnims = window.KHAnims || {};
+
+  var PERIOD = 14;
+  var TAU = Math.PI * 2;
+  var F10 = '500 10px "IBM Plex Mono", Consolas, monospace';
+  var F11 = '500 11px "IBM Plex Mono", Consolas, monospace';
+
+  // ---- DAG (Table 4 and Fig. 6 of the paper) ----
+  // c: 0 confounder, 1 mediator, 2 target; r: row
+  var N = [
+    { k: 'Temp', c: 0, r: 1.25 },
+    { k: 'pH', c: 0, r: 3.25 },
+    { k: 'EC25', c: 1, r: 0 },
+    { k: 'Chl-a', c: 1, r: 1 },
+    { k: 'Turb.', c: 1, r: 2 },
+    { k: 'DO', c: 1, r: 3 },
+    { k: 'ORP', c: 1, r: 4 },
+    { k: 'WQI', c: 2, r: 2 }
+  ];
+  var TEMP = 0, PH = 1, EC = 2, CHL = 3, TURB = 4, DO = 5, ORP = 6, WQI = 7;
+  // edges: [from, to, start, duration]; timing follows the causal order
+  var E = [
+    [TEMP, EC, 0.6, 1.5], [TEMP, CHL, 0.7, 1.5], [TEMP, DO, 0.8, 1.5],
+    [PH, CHL, 0.7, 1.5], [PH, ORP, 0.9, 1.5],
+    [CHL, TURB, 2.3, 0.8], [TURB, DO, 3.1, 0.8], [DO, ORP, 3.9, 0.8],
+    [EC, WQI, 2.2, 1.3], [CHL, WQI, 2.3, 1.3], [TURB, WQI, 3.1, 1.3],
+    [DO, WQI, 3.9, 1.3], [ORP, WQI, 4.7, 1.3]
+  ];
+  var SOFT_T0 = 0.6, SOFT_D = 5.4;      // dashed direct path pulse
+  var STUB_T0 = 6.0, STUB_D = 0.6;      // WQI -> ensemble
+  // arrival times per node, for a short glow
+  var HITS = [];
+  for (var i = 0; i < N.length; i++) HITS.push([]);
+  for (i = 0; i < E.length; i++) HITS[E[i][1]].push(E[i][2] + E[i][3]);
+
+  // ---- ensemble (illustrative shapes; 5 members as in the paper) ----
+  var MU = [-0.55, -0.2, 0.08, 0.38, 0.72];
+  var SD = [0.86, 1.0, 0.74, 0.9, 1.08];
+  var MF = [1, 2, 1, 2, 1];             // integer breathing frequencies -> seamless loop
+  var PHS = [0.3, 1.9, 4.1, 2.6, 5.2];
+  var muS = 0, v2 = 0;
+  for (i = 0; i < 5; i++) muS += MU[i] / 5;
+  for (i = 0; i < 5; i++) v2 += (SD[i] * SD[i] + MU[i] * MU[i]) / 5;
+  var sdS = Math.sqrt(v2 - muS * muS);
+  var OBS = muS + 0.95 * sdS;           // the observation lands inside the interval
+  var NS = 46;                          // samples per curve
+  var mu = [0, 0, 0, 0, 0], sd = [0, 0, 0, 0, 0];
+
+  function sm(a, b, x) {
+    if (x <= a) return 0;
+    if (x >= b) return 1;
+    return 0.5 - 0.5 * Math.cos(Math.PI * (x - a) / (b - a));
+  }
+  function bump(x, w) { return x < 0 || x > w ? 0 : Math.sin(Math.PI * x / w); }
+  function gauss(x, m, s) { var z = (x - m) / s; return Math.exp(-0.5 * z * z) / (s * 2.5066283); }
+
+  // ---- layout, cached per size ----
+  var LW = -1, LH = -1, L = null;
+  function layout(W, H) {
+    if (W === LW && H === LH) return L;
+    LW = W; LH = H;
+    var small = W < 380;
+    var x0 = 12;
+    var ensW = small ? Math.max(104, Math.round(W * 0.36)) : Math.round(W * 0.41);
+    var ex1 = W - 12, ex0 = ex1 - ensW;
+    var x1 = ex0 - 18;                    // right edge of the DAG area
+    var yTop = 34, yBot = H - 46;
+    var step = (yBot - yTop) / 4;
+    var nodes = [];
+    for (var i = 0; i < N.length; i++) {
+      var n = N[i];
+      var big = n.c === 2;
+      var hw = (n.k.length * (big ? 6.6 : 6) + (big ? 14 : (small ? 8 : 12))) / 2;
+      nodes.push({ k: n.k, c: n.c, y: yTop + n.r * step, hw: hw, hh: big ? 9 : 8, x: 0 });
+    }
+    var confCx = x0 + 9 + 17;
+    var wqi = nodes[WQI];
+    wqi.x = x1 - wqi.hw;
+    var confRight = confCx + 17, wqiLeft = wqi.x - wqi.hw;
+    var colCx = (confRight + wqiLeft) / 2;
+    for (i = 0; i < nodes.length; i++) {
+      if (nodes[i].c === 0) nodes[i].x = confCx;
+      else if (nodes[i].c === 1) nodes[i].x = colCx;
+    }
+    // edge geometry
+    var eg = [];
+    for (i = 0; i < E.length; i++) {
+      var a = nodes[E[i][0]], b = nodes[E[i][1]], g;
+      if (a.c === 1 && b.c === 1) {          // vertical chain inside the mediator column
+        g = { v: 1, x0: a.x, y0: a.y + a.hh + 2, x1: b.x, y1: b.y - b.hh - 3 };
+      } else {
+        var sx = a.x + a.hw + 2, sy = a.y;
+        var tx = b.x - b.hw - 3, ty = b.y;
+        if (b.c === 2) ty = b.y + (a.y - b.y) * 0.06;  // gentle fan into the WQI port
+        var dx = tx - sx;
+        g = { v: 0, p: [sx, sy, sx + dx * 0.5, sy, tx - dx * 0.5, ty, tx, ty] };
+      }
+      eg.push(g);
+    }
+    // soft direct path: bracket left of the confounders, bottom run, up into WQI
+    var bx = x0 + 3, yd = H - 16;
+    var tL = nodes[TEMP], pL = nodes[PH];
+    var soft = {
+      bx: bx, yd: yd, tY: tL.y, pY: pL.y,
+      tLeft: tL.x - tL.hw - 2, pLeft: pL.x - pL.hw - 2,
+      wx: wqi.x, wBot: wqi.y + wqi.hh + 3,
+      label: small ? 'soft direct path' : 'soft direct path (L2)',
+      lx: colCx
+    };
+    // route for the pulse (polyline)
+    soft.route = [[bx, tL.y], [bx, yd], [wqi.x, yd], [wqi.x, soft.wBot]];
+    var len = 0, seg = [];
+    for (i = 1; i < soft.route.length; i++) {
+      var d = Math.abs(soft.route[i][0] - soft.route[i - 1][0]) + Math.abs(soft.route[i][1] - soft.route[i - 1][1]);
+      seg.push(d); len += d;
+    }
+    soft.seg = seg; soft.len = len;
+    // ensemble panel
+    var yb = H - 66;
+    var span = 3.25 * sdS;
+    var ens = {
+      x0: ex0, x1: ex1, yb: yb, top: 34,
+      sx: (ensW - 8) / (2 * span), cx: (ex0 + ex1) / 2,
+      hs: (yb - 46) / 0.56
+    };
+    ens.lo = ens.cx - 1.96 * sdS * ens.sx;
+    ens.hi = ens.cx + 1.96 * sdS * ens.sx;
+    ens.ox = ens.cx + (OBS - muS) * ens.sx;
+    L = { small: small, x0: x0, x1: x1, nodes: nodes, eg: eg, soft: soft, ens: ens };
+    return L;
+  }
+
+  function bez(p, u) {
+    var v = 1 - u, a = v * v * v, b = 3 * v * v * u, c = 3 * v * u * u, d = u * u * u;
+    return [a * p[0] + b * p[2] + c * p[4] + d * p[6], a * p[1] + b * p[3] + c * p[5] + d * p[7]];
+  }
+  function edgePt(g, u) {
+    if (g.v) return [g.x0 + (g.x1 - g.x0) * u, g.y0 + (g.y1 - g.y0) * u];
+    return bez(g.p, u);
+  }
+  function routePt(s, u) {
+    var d = u * s.len;
+    for (var i = 0; i < s.seg.length; i++) {
+      if (d <= s.seg[i] || i === s.seg.length - 1) {
+        var f = s.seg[i] ? Math.min(1, d / s.seg[i]) : 0;
+        var a = s.route[i], b = s.route[i + 1];
+        return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+      }
+      d -= s.seg[i];
+    }
+    return s.route[s.route.length - 1];
+  }
+  function chevron(ctx, x, y, dir) { // dir 0 right, 1 down, 2 up
+    ctx.beginPath();
+    if (dir === 0) { ctx.moveTo(x - 4, y - 3); ctx.lineTo(x, y); ctx.lineTo(x - 4, y + 3); }
+    else if (dir === 1) { ctx.moveTo(x - 3, y - 4); ctx.lineTo(x, y); ctx.lineTo(x + 3, y - 4); }
+    else { ctx.moveTo(x - 3, y + 4); ctx.lineTo(x, y); ctx.lineTo(x + 3, y + 4); }
+    ctx.stroke();
+  }
+  function pill(ctx, x, y, hw, hh) {
+    var r = 4, l = x - hw, t = y - hh, w = hw * 2, h = hh * 2;
+    ctx.beginPath();
+    ctx.moveTo(l + r, t); ctx.lineTo(l + w - r, t); ctx.arcTo(l + w, t, l + w, t + r, r);
+    ctx.lineTo(l + w, t + h - r); ctx.arcTo(l + w, t + h, l + w - r, t + h, r);
+    ctx.lineTo(l + r, t + h); ctx.arcTo(l, t + h, l, t + h - r, r);
+    ctx.lineTo(l, t + r); ctx.arcTo(l, t, l + r, t, r);
+    ctx.closePath();
+  }
+  function dot(ctx, x, y, r, col, a, blur) {
+    ctx.globalAlpha = a;
+    ctx.fillStyle = col;
+    ctx.shadowColor = col; ctx.shadowBlur = blur;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function draw(ctx, W, H, tAbs, P, ptr) {
+    var t = ((tAbs % PERIOD) + PERIOD) % PERIOD;
+    var Ly = layout(W, H), nodes = Ly.nodes, i, j, n, g, a, pt;
+
+    // background
+    var bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, P.top); bg.addColorStop(1, P.deep);
+    ctx.globalAlpha = 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.textBaseline = 'middle';
+
+    // panel header (family style: 10px soft, baseline 20)
+    ctx.font = F10; ctx.fillStyle = P.soft; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(Ly.small ? 'causal DAG' : 'causal DAG · 7 CTD variables', Ly.x0, 20);
+    ctx.textBaseline = 'middle';
+
+    // ---- edges ----
+    ctx.lineWidth = 1;
+    for (i = 0; i < E.length; i++) {
+      g = Ly.eg[i];
+      var e = E[i];
+      var lit = bump(t - e[2], e[3] + 0.6);
+      ctx.strokeStyle = e[1] === WQI ? P.teal : P.soft;
+      ctx.globalAlpha = (e[1] === WQI ? 0.32 : 0.36) + 0.3 * lit;
+      ctx.beginPath();
+      if (g.v) { ctx.moveTo(g.x0, g.y0); ctx.lineTo(g.x1, g.y1); }
+      else { ctx.moveTo(g.p[0], g.p[1]); ctx.bezierCurveTo(g.p[2], g.p[3], g.p[4], g.p[5], g.p[6], g.p[7]); }
+      ctx.stroke();
+      if (g.v) chevron(ctx, g.x1, g.y1, 1);
+      else if (e[1] !== WQI) chevron(ctx, g.p[6], g.p[7], 0);
+    }
+    // one shared arrowhead at the WQI port
+    ctx.strokeStyle = P.teal; ctx.globalAlpha = 0.6;
+    chevron(ctx, nodes[WQI].x - nodes[WQI].hw - 3, nodes[WQI].y, 0);
+
+    // soft direct path (dashed, faint)
+    var s = Ly.soft;
+    ctx.save();
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = P.sand; ctx.globalAlpha = 0.42; ctx.lineWidth = 1;
+    ctx.font = F10;
+    var lw = s.label.length * 6 + 10;
+    var lx0 = s.lx - lw / 2, lx1 = s.lx + lw / 2;
+    ctx.beginPath();
+    ctx.moveTo(s.tLeft, s.tY); ctx.lineTo(s.bx, s.tY);
+    ctx.moveTo(s.pLeft, s.pY); ctx.lineTo(s.bx, s.pY);
+    ctx.moveTo(s.bx, s.tY); ctx.lineTo(s.bx, s.yd); ctx.lineTo(lx0, s.yd);
+    ctx.moveTo(lx1, s.yd); ctx.lineTo(s.wx, s.yd); ctx.lineTo(s.wx, s.wBot + 1);
+    ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = P.sand; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
+    chevron(ctx, s.wx, s.wBot, 2);
+    ctx.globalAlpha = 0.85; ctx.fillStyle = P.sand; ctx.textAlign = 'center';
+    ctx.fillText(s.label, s.lx, s.yd);
+
+    // WQI -> ensemble stub
+    var wq = nodes[WQI], en = Ly.ens;
+    var sx0 = wq.x + wq.hw + 3, sx1 = en.x0 - 3;
+    ctx.strokeStyle = P.teal; ctx.globalAlpha = 0.45 + 0.4 * bump(t - STUB_T0, STUB_D + 0.6);
+    ctx.beginPath(); ctx.moveTo(sx0, wq.y); ctx.lineTo(sx1, wq.y); ctx.stroke();
+    chevron(ctx, sx1, wq.y, 0);
+
+    // ---- nodes ----
+    var wGlow = sm(3.4, 6.0, t) * (1 - sm(6.6, 9.6, t));
+    for (i = 0; i < nodes.length; i++) {
+      n = nodes[i];
+      var hit = 0;
+      for (j = 0; j < HITS[i].length; j++) hit = Math.max(hit, bump(t - HITS[i][j], 0.8));
+      // colour roles: confounders sand, water-quality mediators teal, Chl-a chl, model target teal
+      var col = n.c === 0 ? P.sand : (i === CHL ? P.chl : P.teal);
+      if (n.c === 2) hit = wGlow;
+      pill(ctx, n.x, n.y, n.hw, n.hh);
+      ctx.globalAlpha = 0.92; ctx.fillStyle = P.deep; ctx.fill();
+      if (n.c === 2) { ctx.globalAlpha = 0.14 + 0.22 * hit; ctx.fillStyle = P.teal; ctx.fill(); }
+      ctx.globalAlpha = (n.c === 2 ? 0.8 : 0.6) + (n.c === 2 ? 0.2 : 0.4) * hit; ctx.strokeStyle = col; ctx.lineWidth = 1;
+      if (hit > 0.02) { ctx.shadowColor = col; ctx.shadowBlur = 7 * hit; }
+      ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1; ctx.fillStyle = P.text;
+      ctx.font = n.c === 2 ? F11 : F10; ctx.textAlign = 'center';
+      ctx.fillText(n.k, n.x, n.y + 0.5);
+    }
+
+    // ---- pulses ----
+    for (i = 0; i < E.length; i++) {
+      var u = (t - E[i][2]) / E[i][3];
+      if (u <= 0 || u >= 1) continue;
+      pt = edgePt(Ly.eg[i], u);
+      dot(ctx, pt[0], pt[1], 2.2, P.sand, sm(0, 0.12, u) * (1 - sm(0.88, 1, u)), 6);
+    }
+    var us = (t - SOFT_T0) / SOFT_D;
+    if (us > 0 && us < 1) {   // penalised path: a dimmer pulse that fades as it goes
+      pt = routePt(s, us);
+      dot(ctx, pt[0], pt[1], 1.8, P.sand, (0.55 - 0.3 * us) * sm(0, 0.05, us) * (1 - sm(0.94, 1, us)), 4);
+    }
+    var ub = (t - STUB_T0) / STUB_D;
+    if (ub > 0 && ub < 1) {
+      dot(ctx, sx0 + (sx1 - sx0) * ub, wq.y, 2.2, P.teal, sm(0, 0.2, ub) * (1 - sm(0.8, 1, ub)), 6);
+    }
+
+    // ---- ensemble ----
+    var feed = sm(6.4, 7.4, t) * (1 - sm(10.5, 13.5, t));
+    var ph = TAU * t / PERIOD;
+    for (j = 0; j < 5; j++) {
+      mu[j] = MU[j] + 0.06 * Math.sin(ph * MF[j] + PHS[j]);
+      sd[j] = SD[j] * (1 + 0.05 * Math.sin(ph * MF[j] + PHS[j] + 1.3));
+    }
+    var yb = en.yb, xA = en.x0 + 4, xB = en.x1 - 4, dxs = (xB - xA) / (NS - 1);
+    // baseline
+    ctx.strokeStyle = P.grid; ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(en.x0, yb + 0.5); ctx.lineTo(en.x1, yb + 0.5); ctx.stroke();
+    // combined predictive density (mixture), shaded
+    ctx.beginPath(); ctx.moveTo(xA, yb);
+    for (i = 0; i < NS; i++) {
+      var xp = xA + i * dxs, v = muS + (xp - en.cx) / en.sx, m = 0;
+      for (j = 0; j < 5; j++) m += gauss(v, mu[j], sd[j]);
+      ctx.lineTo(xp, yb - (m / 5) * en.hs);
+    }
+    ctx.lineTo(xB, yb); ctx.closePath();
+    ctx.globalAlpha = 0.11 + 0.11 * feed; ctx.fillStyle = P.teal; ctx.fill();
+    // shade the 95% band a little more
+    ctx.save(); ctx.beginPath(); ctx.rect(en.lo, en.top - 6, en.hi - en.lo, yb - en.top + 6); ctx.clip();
+    ctx.beginPath(); ctx.moveTo(xA, yb);
+    for (i = 0; i < NS; i++) {
+      xp = xA + i * dxs; v = muS + (xp - en.cx) / en.sx; m = 0;
+      for (j = 0; j < 5; j++) m += gauss(v, mu[j], sd[j]);
+      ctx.lineTo(xp, yb - (m / 5) * en.hs);
+    }
+    ctx.lineTo(xB, yb); ctx.closePath();
+    ctx.globalAlpha = 0.1 + 0.08 * feed; ctx.fill();
+    ctx.restore();
+    // members
+    ctx.strokeStyle = P.teal; ctx.lineWidth = 1;
+    for (j = 0; j < 5; j++) {
+      ctx.globalAlpha = 0.5 + 0.42 * feed;
+      ctx.beginPath();
+      for (i = 0; i < NS; i++) {
+        xp = xA + i * dxs; v = muS + (xp - en.cx) / en.sx;
+        var yy = yb - gauss(v, mu[j], sd[j]) * en.hs;
+        if (i) ctx.lineTo(xp, yy); else ctx.moveTo(xp, yy);
+      }
+      ctx.stroke();
+    }
+    // 95% interval bracket
+    var yk = yb + 10;
+    ctx.strokeStyle = P.text; ctx.globalAlpha = 0.6 + 0.3 * feed;
+    ctx.beginPath();
+    ctx.moveTo(en.lo, yk - 5); ctx.lineTo(en.lo, yk); ctx.lineTo(en.hi, yk); ctx.lineTo(en.hi, yk - 5);
+    ctx.stroke();
+    ctx.globalAlpha = 0.95; ctx.fillStyle = P.text; ctx.font = F10; ctx.textAlign = 'center';
+    ctx.fillText('95% interval', (en.lo + en.hi) / 2, yk + 12);
+    ctx.globalAlpha = 0.9; ctx.fillStyle = P.soft;
+    ctx.fillText('PICP 0.996', (en.lo + en.hi) / 2, yk + 25);
+
+    // observation: appears, drops into the interval, rings once, stays, fades
+    var ox = en.ox, oy, oa = sm(7.3, 7.8, t) * (1 - sm(12.3, 13.3, t));
+    if (oa > 0.001) {
+      var fall = sm(7.8, 8.8, t);
+      oy = (en.top - 4) + (yb - 3.5 - (en.top - 4)) * fall;
+      var landed = sm(8.75, 9.1, t);
+      if (landed > 0) {   // tick down to the interval line
+        ctx.strokeStyle = P.sand; ctx.globalAlpha = 0.8 * landed * oa;
+        ctx.beginPath(); ctx.moveTo(ox, yb + 1); ctx.lineTo(ox, yk - 1); ctx.stroke();
+      }
+      var rg = (t - 8.8) / 1.2;
+      if (rg > 0 && rg < 1) {
+        ctx.strokeStyle = P.sand; ctx.globalAlpha = 0.7 * (1 - rg);
+        ctx.beginPath(); ctx.arc(ox, oy, 3.5 + 9 * rg, 0, TAU); ctx.stroke();
+      }
+      dot(ctx, ox, oy, 3.2, P.sand, oa, 7);
+      if (!Ly.small) {   // label sits on the interval line, right of "95% interval"
+        ctx.globalAlpha = oa * 0.9; ctx.fillStyle = P.sand; ctx.font = F10; ctx.textAlign = 'right';
+        ctx.fillText('observed', en.x1, yk + 12);
+      }
+    }
+
+    // ensemble header + family "illustrative" tag (bottom right)
+    ctx.textBaseline = 'alphabetic';
+    ctx.globalAlpha = 1; ctx.fillStyle = P.soft; ctx.font = F10; ctx.textAlign = 'left';
+    ctx.fillText('5-member ensemble', en.x0, 20);
+    ctx.globalAlpha = 0.8; ctx.textAlign = 'right';
+    ctx.fillText('illustrative', W - 12, H - 12);
+    ctx.globalAlpha = 1; ctx.textAlign = 'left';
+  }
+
+  window.KHAnims.joh = {
+    period: PERIOD,
+    still: 9.3,
+    alt: 'A directed acyclic graph of seven CTD water quality variables sends pulses toward the Water Quality Index, ' +
+         'with a faint dashed soft direct path; on the right, a five-member ensemble of predictive densities forms a ' +
+         '95% interval and an observation drops inside it.',
+    draw: draw
+  };
+})();
+/* ---- scene: envdev ---- */
+(function () {
+  window.KHAnims = window.KHAnims || {};
+
+  // ---- seeded PRNG (mulberry32) ----
+  var seed = 20231231;
+  function rnd() {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    var r = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  }
+
+  var TAU = Math.PI * 2;
+  var PERIOD = 15;            // 12 months x 1.25 s
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var BV = 0.55;              // half-width of the box along lat (lon half-width is 1)
+
+  // ---- 20 stations along a narrow, curved reservoir; casts deepen toward the dam (illustrative) ----
+  var NST = 20, st = [], pts = [];
+  for (var i = 0; i < NST; i++) {
+    var u = -0.88 + 1.76 * i / (NST - 1) + (rnd() - 0.5) * 0.05;
+    var v = 0.2 * Math.sin(u * 2.1) + (i % 2 ? 0.2 : -0.2) + (rnd() - 0.5) * 0.16;
+    var dmax = 0.3 + 0.62 * (u + 1) / 2 + (rnd() - 0.5) * 0.08;
+    if (dmax > 0.95) dmax = 0.95;
+    var sn = rnd() * 6;
+    st.push({ u: u, v: v, d: dmax });
+    var n = 2 + Math.round(dmax * 5);
+    for (var k = 0; k < n; k++) {
+      var d = 0.04 + (dmax - 0.04) * k / (n - 1);
+      pts.push({ u: u, v: v, d: d, n: sn + (rnd() - 0.5) * 8, x: 0, y: 0, r: 2, c: 0 });
+    }
+  }
+  var NP = pts.length;
+
+  // ---- seasonal "warmth" 0 (Jan) .. 1 (Jul/Aug) ----
+  function warm(m) { return 0.5 - 0.5 * Math.cos(TAU * (m - 0.6) / 12); }
+
+  // CCME WQI classes: Excellent 95-100, Good 80-94, Fair 65-79, Marginal 45-64, Poor 0-44
+  // index 0..4 = Poor, Marginal, Fair, Good, Excellent (same five-class ramp as the jcp scene)
+  function cls(s) { return s >= 95 ? 4 : s >= 80 ? 3 : s >= 65 ? 2 : s >= 45 ? 1 : 0; }
+  var CALPHA = [0.95, 0.9, 0.8, 0.55, 0.95];
+
+  // ---- importance per month for five of the paper's predictors (shapes illustrative) ----
+  var VARS = ['Temp', 'DO', 'Chl-a', 'Turb', 'EC25'];
+  var IMP = [[0.52, 0.34, 6.8], [0.48, 0.32, 8.6], [0.46, 0.30, 4.6], [0.50, 0.30, 0.4], [0.47, 0.20, 10.8]];
+  var NV = VARS.length, imp = [], rk = [];
+  for (var m = 0; m < 12; m++) {
+    var row = [], mx = 0;
+    for (var j = 0; j < NV; j++) {
+      var val = IMP[j][0] + IMP[j][1] * Math.cos(TAU * (m - IMP[j][2]) / 12);
+      row.push(val); if (val > mx) mx = val;
+    }
+    for (j = 0; j < NV; j++) row[j] /= mx;
+    var ord = [0, 1, 2, 3, 4].sort(function (a, b) { return row[b] - row[a]; });
+    var r2 = [];
+    for (j = 0; j < NV; j++) r2[ord[j]] = j;
+    imp.push(row); rk.push(r2);
+  }
+
+  var corner = [[-1, -BV], [1, -BV], [1, BV], [-1, BV]];
+  var cx4 = [0, 0, 0, 0], cy4 = [0, 0, 0, 0];
+  var steer = 0;
+  var MONO = '500 10px "IBM Plex Mono", Consolas, monospace';
+  var MONO11 = '500 11px "IBM Plex Mono", Consolas, monospace';
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function ease(x) { return 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1)); }
+
+  window.KHAnims.envdev = {
+    period: PERIOD,
+    still: 9.0,
+    alt: 'A gently swaying 3D box of latitude, longitude and depth holds CTD points from 20 reservoir stations, coloured by water quality index class as the months of 2023 pass, beside SHAP feature importance bars for Temp, DO, Chl-a, Turb and EC25 that reorder from month to month.',
+    draw: function (ctx, W, H, t, P, ptr) {
+      var tt = ((t % PERIOD) + PERIOD) % PERIOD;
+      var mm = tt / PERIOD * 12;
+      var k = Math.floor(mm) % 12, f = mm - Math.floor(mm);
+      var e = ease((f - 0.5) / 0.5);           // hold half a month, then glide to the next
+      var k2 = (k + 1) % 12;
+      var mc = k + e;                           // continuous month
+      var shown = e > 0.5 ? k2 : k;
+      var wide = W >= 380;
+
+      // background
+      var g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, P.top); g.addColorStop(1, P.deep);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.textBaseline = 'alphabetic';
+
+      // ---------- left: 3D twin ----------
+      var LW = Math.round(W * (wide ? 0.5 : 0.5));
+      var R = Math.min(92, (LW - 40) / 2);
+      var cx = 12 + (LW - 12) / 2 + 2;
+      var tilt = 0.32;
+      var Hd = Math.min(74, H - 136);
+      var cy0 = 34 + R * tilt * 0.98 + 2;
+
+      var tgt = ptr && ptr.active ? (ptr.x - 0.5) * 0.5 : 0;
+      steer += (tgt - steer) * 0.06;
+      var A = 0.5 + 0.3 * Math.sin(TAU * tt / PERIOD) + steer;
+      var ca = Math.cos(A), sa = Math.sin(A);
+
+      for (var c = 0; c < 4; c++) {
+        var uu = corner[c][0], vv = corner[c][1];
+        cx4[c] = cx + (uu * ca - vv * sa) * R;
+        cy4[c] = cy0 + (uu * sa + vv * ca) * R * tilt;
+      }
+      // far corner = smallest screen y on top face
+      var far = 0;
+      for (c = 1; c < 4; c++) if (cy4[c] < cy4[far]) far = c;
+
+      // box: back edges faint, front edges grid
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = P.grid;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      for (c = 0; c < 4; c++) {
+        var n2 = (c + 1) % 4;
+        if (c === far || n2 === far) continue;
+        ctx.moveTo(cx4[c], cy4[c] + Hd); ctx.lineTo(cx4[n2], cy4[n2] + Hd);
+      }
+      for (c = 0; c < 4; c++) { if (c === far) continue; ctx.moveTo(cx4[c], cy4[c]); ctx.lineTo(cx4[c], cy4[c] + Hd); }
+      ctx.stroke();
+      ctx.globalAlpha = 0.45;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cx4[far], cy4[far]); ctx.lineTo(cx4[far], cy4[far] + Hd);
+      ctx.moveTo(cx4[(far + 3) % 4], cy4[(far + 3) % 4] + Hd); ctx.lineTo(cx4[far], cy4[far] + Hd);
+      ctx.lineTo(cx4[(far + 1) % 4], cy4[(far + 1) % 4] + Hd);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // water surface (top face)
+      ctx.globalAlpha = 0.10; ctx.fillStyle = P.teal;
+      ctx.beginPath(); ctx.moveTo(cx4[0], cy4[0]);
+      for (c = 1; c < 4; c++) ctx.lineTo(cx4[c], cy4[c]);
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 0.75; ctx.strokeStyle = P.teal; ctx.stroke();
+
+      // project points and stations
+      var sh = R * tilt;
+      for (i = 0; i < NP; i++) {
+        var p = pts[i];
+        var yr = p.u * sa + p.v * ca;
+        p.x = cx + (p.u * ca - p.v * sa) * R;
+        p.y = cy0 + yr * sh + p.d * Hd;
+        p.r = 1.5 + 0.55 * (yr + 1);
+        var s = 92 - p.n - warm(mc) * (16 + 32 * p.d) - 6 * p.d;
+        p.c = cls(s);
+      }
+      // CTD casts (faint verticals) and lake-bed line
+      ctx.globalAlpha = 0.22; ctx.strokeStyle = P.soft;
+      ctx.beginPath();
+      for (i = 0; i < NST; i++) {
+        var q = st[i];
+        var qx = cx + (q.u * ca - q.v * sa) * R, qy = cy0 + (q.u * sa + q.v * ca) * sh;
+        ctx.moveTo(qx, qy); ctx.lineTo(qx, qy + q.d * Hd);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = P.sky;
+      ctx.beginPath();
+      for (i = 0; i < NST; i++) {
+        q = st[i];
+        qx = cx + (q.u * ca - q.v * sa) * R; qy = cy0 + (q.u * sa + q.v * ca) * sh + q.d * Hd;
+        if (i === 0) ctx.moveTo(qx, qy); else ctx.lineTo(qx, qy);
+      }
+      ctx.stroke();
+
+      // points, one fill per WQI class
+      var COLS = [P.coral, P.sand, P.soft, P.teal, P.teal];
+      for (c = 0; c < 5; c++) {
+        ctx.fillStyle = COLS[c]; ctx.globalAlpha = CALPHA[c];
+        ctx.beginPath();
+        for (i = 0; i < NP; i++) {
+          p = pts[i];
+          if (p.c !== c) continue;
+          ctx.moveTo(p.x + p.r, p.y); ctx.arc(p.x, p.y, p.r, 0, TAU);
+        }
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // axis labels
+      ctx.font = MONO; ctx.fillStyle = P.soft;
+      // left-most corner -> depth label beside its vertical edge
+      var lc = 0;
+      for (c = 1; c < 4; c++) if (cx4[c] < cx4[lc]) lc = c;
+      ctx.save();
+      ctx.translate(cx4[lc] - 6, cy4[lc] + Hd * 0.42);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'right';
+      ctx.fillText('depth', 0, 0);
+      ctx.restore();
+      // depth arrow
+      ctx.strokeStyle = P.soft; ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      var ax = cx4[lc] - 9, ay0 = cy4[lc] + Hd * 0.42 + 6, ay1 = cy4[lc] + Hd * 0.95;
+      if (ay1 > ay0 + 6) {
+        ctx.moveTo(ax, ay0); ctx.lineTo(ax, ay1);
+        ctx.moveTo(ax - 2.5, ay1 - 3); ctx.lineTo(ax, ay1); ctx.lineTo(ax + 2.5, ay1 - 3);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      // near corner (largest y) -> lon and lat along the two front bottom edges
+      var nc = (far + 2) % 4;
+      var aEdge = (nc + 3) % 4, bEdge = (nc + 1) % 4;   // neighbours of near corner
+      var eu = [aEdge, bEdge];
+      for (var w2 = 0; w2 < 2; w2++) {
+        var o = eu[w2];
+        var mxp = (cx4[nc] + cx4[o]) / 2, myp = (cy4[nc] + cy4[o]) / 2 + Hd + 13;
+        var isLon = (corner[nc][1] === corner[o][1]); // same lat -> edge runs along lon
+        ctx.textAlign = 'center';
+        ctx.fillText(isLon ? 'lon' : 'lat', mxp + (mxp < cx ? -6 : 6), myp);
+      }
+
+      // panel header (family style: 10px soft, baseline 20)
+      ctx.textAlign = 'left';
+      ctx.font = MONO; ctx.fillStyle = P.soft;
+      ctx.fillText(W >= 440 ? '3D digital twin · 31,322 CTD points' : '3D digital twin', 12, 20);
+
+      // month timeline
+      var ty = H - 16;
+      ctx.font = MONO11; ctx.fillStyle = P.sand;
+      var lab = MONTHS[shown] + ' 2023';
+      ctx.fillText(lab, 12, ty + 4);
+      var lw = ctx.measureText(lab).width;
+      var tx0 = 12 + lw + 12, tx1 = LW - 10;
+      ctx.strokeStyle = P.grid; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tx0, ty); ctx.lineTo(tx1, ty);
+      for (m = 0; m < 12; m++) {
+        var xm = tx0 + (tx1 - tx0) * m / 11;
+        ctx.moveTo(xm, ty - 3); ctx.lineTo(xm, ty + 3);
+      }
+      ctx.stroke();
+      // marker: steps along the months; at the year end it fades out at Dec and back in at Jan
+      ctx.fillStyle = P.sand; ctx.shadowColor = P.sand; ctx.shadowBlur = 6;
+      if (mc < 11) {
+        ctx.beginPath(); ctx.arc(tx0 + (tx1 - tx0) * mc / 11, ty, 3.2, 0, TAU); ctx.fill();
+      } else {
+        var e2 = mc - 11;
+        ctx.globalAlpha = 1 - e2; ctx.beginPath(); ctx.arc(tx1, ty, 3.2, 0, TAU); ctx.fill();
+        ctx.globalAlpha = e2; ctx.beginPath(); ctx.arc(tx0, ty, 3.2, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      ctx.shadowBlur = 0;
+
+      // ---------- right: SHAP importance ----------
+      var RX = LW + (wide ? 18 : 10), RX1 = W - 12;
+      ctx.font = MONO; ctx.fillStyle = P.soft; ctx.textAlign = 'left';
+      var head = 'feature importance (SHAP)';
+      if (ctx.measureText(head).width > RX1 - RX) head = 'importance (SHAP)';
+      ctx.fillText(head, RX, 20);
+
+      var labW = 40, bx0 = RX + labW, bw = RX1 - bx0;
+      var by0 = 38, dy = wide ? 21 : 20, bh = 7;
+      for (j = 0; j < NV; j++) {
+        var rpos = rk[k][j] + (rk[k2][j] - rk[k][j]) * e;
+        var vl = imp[k][j] + (imp[k2][j] - imp[k][j]) * e;
+        var yb = by0 + rpos * dy;
+        // track
+        ctx.fillStyle = P.grid; ctx.globalAlpha = 0.6;
+        ctx.fillRect(bx0, yb - bh / 2, bw, bh);
+        // all bars teal (model); the leading bar is sand (emphasis), blended smoothly as ranks swap
+        var emph = rpos >= 1 ? 0 : 0.5 + 0.5 * Math.cos(Math.PI * rpos);
+        ctx.fillStyle = P.teal; ctx.globalAlpha = 0.8;
+        ctx.fillRect(bx0, yb - bh / 2, bw * vl, bh);
+        if (emph > 0.01) {
+          ctx.fillStyle = P.sand; ctx.globalAlpha = 0.95 * emph;
+          ctx.fillRect(bx0, yb - bh / 2, bw * vl, bh);
+        }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = emph > 0.5 ? P.text : P.soft;
+        ctx.fillText(VARS[j], RX, yb + 3.5);
+      }
+
+      // finding + legend
+      var ly = by0 + NV * dy + (wide ? 4 : 2);
+      if (wide) {
+        ctx.fillStyle = P.text; ctx.font = MONO;
+        var fnd = 'weights shift by month, depth, place';
+        if (ctx.measureText(fnd).width > RX1 - RX) fnd = 'weights shift in time and space';
+        ctx.fillText(fnd, RX, ly);
+      }
+      // WQI class legend (Poor .. Excellent, same ramp as jcp); bottom row when wide, else under the bars
+      var gy = wide ? H - 16 : ly - 3.5;
+      ctx.font = MONO; ctx.fillStyle = P.soft; ctx.textAlign = 'left';
+      var gx = RX;
+      ctx.fillText('Poor', gx, gy + 3.5); gx += ctx.measureText('Poor').width + 6;
+      for (c = 0; c < 5; c++) {
+        ctx.fillStyle = COLS[c]; ctx.globalAlpha = CALPHA[c];
+        ctx.beginPath(); ctx.arc(gx + 3 + c * 9, gy, 3, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      gx += 5 * 9 + 3;
+      ctx.fillStyle = P.soft;
+      ctx.fillText('Excellent', gx, gy + 3.5);
+      // family "illustrative" tag (bottom right)
+      ctx.globalAlpha = 0.8; ctx.textAlign = 'right';
+      ctx.fillText('illustrative', W - 12, H - 12);
+      ctx.globalAlpha = 1; ctx.textAlign = 'left';
+    }
+  };
+})();
+/* ---- scene: wr ---- */
+(function () {
+  window.KHAnims = window.KHAnims || {};
+
+  var PER = 16;
+  var F10 = '500 10px "IBM Plex Mono", Consolas, monospace';
+  var F11 = '500 11px "IBM Plex Mono", Consolas, monospace';
+  var BIG = '800 22px "Bricolage Grotesque", "Segoe UI", sans-serif';
+  var TAU = Math.PI * 2;
+
+  function rng(seed) {
+    return function () {
+      seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function clamp(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function ease(x) { x = clamp(x); return 0.5 - 0.5 * Math.cos(Math.PI * x); }
+
+  // station cloud (unit coordinates, tilted NW-SE like a long landmass); illustrative positions
+  var R = rng(20260927);
+  var DOTS = [];
+  var rot = 0.42, cr = Math.cos(rot), sr = Math.sin(rot);
+  for (var i = 0; i < 80; i++) {
+    var a = R() * TAU;
+    var rr = Math.sqrt(R()) * (1 + 0.16 * Math.sin(3 * a + 1.1) + 0.08 * Math.sin(5 * a));
+    var ux = Math.cos(a) * rr, uy = Math.sin(a) * rr * 0.72;
+    DOTS.push({ x: ux * cr - uy * sr, y: ux * sr + uy * cr, s: 1.3 + R() * 0.9, k: 1 + Math.floor(R() * 3), ph: R() * TAU });
+  }
+  var DTOP = 0, DBOT = 0;
+  for (i = 0; i < DOTS.length; i++) { DTOP = Math.min(DTOP, DOTS[i].y); DBOT = Math.max(DBOT, DOTS[i].y); }
+
+  // response plot shapes (illustrative)
+  var HW = 0.11;
+  function env(u) { return 0.18 + 0.56 / (1 + Math.exp(-(u - 0.5) * 7)); }
+  function net(u) { return env(u) + 0.045 * Math.sin(u * 8.5 + 0.4); }
+  var STEP = [0.02, -0.03, 0.17, 0.01, -0.03, -0.19, 0.03, 0.17, -0.02];
+  var NS = STEP.length;
+  var STEPV = [];
+  for (var k = 0; k < NS; k++) STEPV.push(env((k + 0.5) / NS) + STEP[k]);
+
+  function bez(p0x, p0y, cx, cy, p2x, p2y, s, out) {
+    var m = 1 - s;
+    out[0] = m * m * p0x + 2 * m * s * cx + s * s * p2x;
+    out[1] = m * m * p0y + 2 * m * s * cy + s * s * p2y;
+  }
+  var PT = [0, 0];
+
+  function dag(ctx, x, y, P) {
+    ctx.fillStyle = P.deep;
+    ctx.globalAlpha *= 1;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x - 16, y - 11, 32, 22, 5); else ctx.rect(x - 16, y - 11, 32, 22);
+    ctx.fill();
+    ctx.strokeStyle = P.sand;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    var n = [[-8, -5], [8, -5], [-3, 5], [8, 5]];
+    ctx.beginPath();
+    ctx.moveTo(x + n[0][0], y + n[0][1]); ctx.lineTo(x + n[2][0], y + n[2][1]);
+    ctx.moveTo(x + n[0][0], y + n[0][1]); ctx.lineTo(x + n[3][0], y + n[3][1]);
+    ctx.moveTo(x + n[1][0], y + n[1][1]); ctx.lineTo(x + n[3][0], y + n[3][1]);
+    ctx.moveTo(x + n[2][0], y + n[2][1]); ctx.lineTo(x + n[3][0], y + n[3][1]);
+    ctx.stroke();
+    ctx.fillStyle = P.sand;
+    for (var j = 0; j < 4; j++) {
+      ctx.beginPath(); ctx.arc(x + n[j][0], y + n[j][1], 2.2, 0, TAU); ctx.fill();
+    }
+  }
+
+  function phase1(ctx, W, H, t1, tt, P, A) {
+    var small = W < 380;
+    var ccx = Math.max(66, 0.2 * W), ccy = 0.5 * H;
+    var rx = Math.min(0.14 * W, 72), ry = Math.min(0.27 * H, (H - 58 - ccy) / DBOT);
+    // stations
+    ctx.fillStyle = P.teal;
+    for (var i = 0; i < DOTS.length; i++) {
+      var d = DOTS[i];
+      ctx.globalAlpha = A * (0.62 + 0.3 * Math.sin(TAU * d.k * tt / PER + d.ph));
+      ctx.beginPath(); ctx.arc(ccx + d.x * rx, ccy + d.y * ry, d.s, 0, TAU); ctx.fill();
+    }
+
+    // reservoir cross-section
+    var hw = Math.min(0.12 * W, 60);
+    var rcx = W - 12 - hw - 12;
+    var sY = 0.48 * H, bY = 0.78 * H;
+    ctx.globalAlpha = A;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(rcx - hw, sY);
+    ctx.bezierCurveTo(rcx - hw * 0.45, bY, rcx + hw * 0.45, bY, rcx + hw, sY);
+    ctx.closePath();
+    var g = ctx.createLinearGradient(0, sY, 0, bY);
+    g.addColorStop(0, 'rgba(92,200,188,0.42)');
+    g.addColorStop(1, 'rgba(92,200,188,0.08)');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.clip();
+    // stratification lines and chlorophyll layer
+    var dep = (0.25 * sY + 0.75 * bY) - sY;
+    ctx.fillStyle = P.chl;
+    ctx.globalAlpha = A * 0.22;
+    ctx.fillRect(rcx - hw, sY + dep * 0.52, hw * 2, dep * 0.12);
+    ctx.strokeStyle = P.soft;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.globalAlpha = A * 0.45;
+    ctx.beginPath();
+    ctx.moveTo(rcx - hw, sY + dep * 0.3); ctx.lineTo(rcx + hw, sY + dep * 0.3);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    // banks
+    ctx.globalAlpha = A * 0.9;
+    ctx.strokeStyle = P.soft;
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(rcx - hw - 10, sY - 10);
+    ctx.lineTo(rcx - hw, sY);
+    ctx.bezierCurveTo(rcx - hw * 0.45, bY, rcx + hw * 0.45, bY, rcx + hw, sY);
+    ctx.lineTo(rcx + hw + 10, sY - 12);
+    ctx.stroke();
+    ctx.strokeStyle = P.teal;
+    ctx.globalAlpha = A * 0.8;
+    ctx.beginPath(); ctx.moveTo(rcx - hw, sY); ctx.lineTo(rcx + hw, sY); ctx.stroke();
+
+    // depth bins (CTD-like cast) after arrival
+    var nb = 7, last = -1;
+    for (var b = 0; b < nb; b++) {
+      var ab = ease((t1 - 4.8 - b * 0.18) / 0.3);
+      if (ab <= 0) continue;
+      last = b;
+      var by = sY + 5 + b * (dep - 11) / (nb - 1);
+      ctx.globalAlpha = A * ab;
+      ctx.fillStyle = (b === 4) ? P.chl : P.teal;
+      ctx.beginPath(); ctx.arc(rcx, by, 2, 0, TAU); ctx.fill();
+    }
+    if (last >= 0) {
+      ctx.globalAlpha = A * 0.5;
+      ctx.strokeStyle = P.sand;
+      ctx.beginPath(); ctx.moveTo(rcx + 6, sY + 2); ctx.lineTo(rcx + 6, sY + 5 + last * (dep - 11) / (nb - 1)); ctx.stroke();
+    }
+
+    // transfer arc
+    var p0x = ccx, p0y = ccy + DTOP * ry - 30;
+    var p2x = rcx, p2y = sY - 31;
+    var cx = (p0x + p2x) / 2, cy = Math.min(p0y, p2y) - 0.22 * H;
+    var s = ease((t1 - 1.0) / 3.6);
+    ctx.globalAlpha = A * 0.55;
+    ctx.strokeStyle = P.grid;
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath(); ctx.moveTo(p0x, p0y); ctx.quadraticCurveTo(cx, cy, p2x, p2y); ctx.stroke();
+    ctx.setLineDash([]);
+    if (s > 0.001) {
+      ctx.globalAlpha = A * 0.85;
+      ctx.strokeStyle = P.sand;
+      ctx.beginPath(); ctx.moveTo(p0x, p0y);
+      var N = 32;
+      for (var q = 1; q <= N; q++) { bez(p0x, p0y, cx, cy, p2x, p2y, s * q / N, PT); ctx.lineTo(PT[0], PT[1]); }
+      ctx.stroke();
+    }
+    bez(p0x, p0y, cx, cy, p2x, p2y, s, PT);
+    ctx.globalAlpha = A;
+    ctx.shadowColor = P.sand; ctx.shadowBlur = 6;
+    dag(ctx, PT[0], PT[1], P);
+    ctx.shadowBlur = 0;
+    ctx.font = F10; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = P.sand;
+    ctx.fillText('pipeline', PT[0], PT[1] + 22);
+
+    // caption between the two sites
+    var mx = (ccx + rx + rcx - hw - 10) / 2;
+    ctx.fillStyle = P.soft;
+    ctx.globalAlpha = A * 0.9;
+    ctx.fillText(small ? 'the pipeline' : 'pipeline transferred,', mx, 0.66 * H);
+    ctx.fillText(small ? 'travels' : 'not the fitted graph', mx, 0.66 * H + 13);
+
+    // site labels
+    ctx.globalAlpha = A;
+    ctx.font = F11; ctx.fillStyle = P.text;
+    ctx.textAlign = 'left';
+    ctx.fillText('Mexico, 1,012 stations', 12, H - 38);
+    ctx.textAlign = 'right';
+    ctx.fillText('Wadi Dayqah, Oman', W - 12, H - 38);
+    ctx.font = F10; ctx.fillStyle = P.soft;
+    ctx.textAlign = 'left';
+    ctx.fillText(small ? '4,163 samples' : '4,163 samples, 2012–2021', 12, H - 25);
+    ctx.textAlign = 'right';
+    ctx.fillText(small ? '8,810 depth bins' : '8,810 depth bins, 17 campaigns', W - 12, H - 25);
+  }
+
+  function phase2(ctx, W, H, t2, P, A, ptr) {
+    var small = W < 380;
+    var x0 = 34, x1 = Math.round(W * (small ? 0.6 : 0.64)), y0 = 34, y1 = H - 34;
+    function px(u) { return x0 + u * (x1 - x0); }
+    function py(v) { return y1 - v * (y1 - y0); }
+    var u, j;
+
+    // panel header (family style: 10px soft, baseline 20)
+    ctx.globalAlpha = A; ctx.font = F10; ctx.fillStyle = P.soft; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('Wadi Dayqah nowcast', 12, 20);
+
+    // axes
+    ctx.globalAlpha = A * 0.8;
+    ctx.strokeStyle = P.soft; ctx.lineWidth = 1; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y0 - 6); ctx.lineTo(x0, y1); ctx.lineTo(x1 + 6, y1); ctx.stroke();
+    ctx.font = F10; ctx.fillStyle = P.soft; ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'center';
+    ctx.fillText('temperature (°C)', (x0 + x1) / 2, y1 + 16);
+    ctx.save();
+    ctx.translate(x0 - 10, (y0 + y1) / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Chl-a response', 0, 0);
+    ctx.restore();
+
+    // envelope band
+    var M = 24;
+    ctx.beginPath();
+    for (j = 0; j <= M; j++) { u = j / M; ctx[j ? 'lineTo' : 'moveTo'](px(u), py(env(u) + HW)); }
+    for (j = M; j >= 0; j--) { u = j / M; ctx.lineTo(px(u), py(env(u) - HW)); }
+    ctx.closePath();
+    ctx.fillStyle = P.teal; ctx.globalAlpha = A * 0.15; ctx.fill();
+    ctx.strokeStyle = P.teal; ctx.globalAlpha = A * 0.35; ctx.stroke();
+    ctx.globalAlpha = A * 0.85; ctx.fillStyle = P.teal; ctx.textAlign = 'left';
+    ctx.fillText(small ? 'envelope' : 'assumed envelope', x0 + 8, py(0.64));
+
+    // pointer guide
+    if (ptr && ptr.active) {
+      var gx = ptr.x * W;
+      if (gx > x0 && gx < x1) {
+        ctx.globalAlpha = A * 0.25; ctx.strokeStyle = P.soft;
+        ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke();
+      }
+    }
+
+    // network curve
+    var pn = ease((t2 - 1.4) / 2.2);
+    if (pn > 0.001) {
+      var NN = 40;
+      ctx.globalAlpha = A; ctx.strokeStyle = P.teal; ctx.lineWidth = 1.5;
+      ctx.shadowColor = P.teal; ctx.shadowBlur = 6;
+      ctx.beginPath();
+      for (j = 0; j <= NN; j++) {
+        u = pn * j / NN;
+        ctx[j ? 'lineTo' : 'moveTo'](px(u), py(net(u)));
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = P.teal;
+      ctx.beginPath(); ctx.arc(px(pn), py(net(pn)), 2.6, 0, TAU); ctx.fill();
+      ctx.lineWidth = 1;
+    }
+
+    // tree-ensemble step curve
+    var pt = ease((t2 - 3.8) / 2.6);
+    if (pt > 0.001) {
+      ctx.globalAlpha = A * 0.95; ctx.strokeStyle = P.sand; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (k = 0; k < NS; k++) {
+        var ua = k / NS, ub = (k + 1) / NS;
+        if (ua >= pt) break;
+        var yv = py(STEPV[k]);
+        if (k === 0) ctx.moveTo(px(ua), yv); else ctx.lineTo(px(ua), yv);
+        ctx.lineTo(px(Math.min(ub, pt)), yv);
+      }
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      for (k = 0; k < NS; k++) {
+        var um = (k + 0.5) / NS;
+        if (Math.abs(STEP[k]) <= HW) continue;
+        var ac = clamp((pt - um) / 0.06);
+        if (ac <= 0) continue;
+        var cxp = px(um), cyp = py(STEPV[k]);
+        ctx.globalAlpha = A * ac * 0.35; ctx.strokeStyle = P.coral;
+        ctx.beginPath(); ctx.arc(cxp, cyp, 6, 0, TAU); ctx.stroke();
+        ctx.globalAlpha = A * ac; ctx.fillStyle = P.coral;
+        ctx.beginPath(); ctx.arc(cxp, cyp, 2.8, 0, TAU); ctx.fill();
+      }
+    }
+
+    // readouts
+    var rx = x1 + 18, base = H / 2 - 62;
+    var an = ease((t2 - 3.4) / 0.6), at = ease((t2 - 6.4) / 0.6);
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = A * (0.35 + 0.65 * an);
+    ctx.font = F11; ctx.fillStyle = P.teal;
+    ctx.fillText('network', rx, base);
+    ctx.globalAlpha = A * an;
+    ctx.font = BIG; ctx.fillText('5.5%', rx, base + 24);
+    ctx.globalAlpha = A * (0.35 + 0.65 * at);
+    ctx.font = F11; ctx.fillStyle = P.sand;
+    ctx.fillText('tree ensembles', rx, base + 50);
+    ctx.globalAlpha = A * at;
+    ctx.font = BIG; ctx.fillText('20–38%', rx, base + 74);
+    ctx.globalAlpha = A * Math.max(an, at);
+    ctx.font = F10; ctx.fillStyle = P.soft;
+    ctx.fillText(small ? 'bins outside' : 'of forward nowcast', rx, base + 95);
+    ctx.fillText(small ? 'the envelope' : 'bins outside envelope', rx, base + 108);
+  }
+
+  window.KHAnims.wr = {
+    period: PER,
+    still: 13.5,
+    alt: 'The same pipeline travels from 1,012 Mexican water-quality stations to the Wadi Dayqah reservoir in Oman; ' +
+         'there the network stays inside an assumed temperature envelope (5.5% of nowcast bins outside) while tree ensembles break it (20 to 38%).',
+    draw: function (ctx, W, H, t, P, ptr) {
+      var tt = ((t % PER) + PER) % PER;
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.setLineDash([]);
+      var g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, P.top); g.addColorStop(1, P.deep);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+      var a1, a2, x;
+      if (tt < 6) { a1 = 1; a2 = 0; }
+      else if (tt < 7) { x = ease(tt - 6); a1 = 1 - x; a2 = x; }
+      else if (tt < 15.2) { a1 = 0; a2 = 1; }
+      else { x = ease((tt - 15.2) / 0.8); a1 = x; a2 = 1 - x; }
+      var t1 = tt < 7 ? tt : 0;
+      var t2 = tt >= 6 ? tt - 6 : 0;
+      if (a1 > 0.001) phase1(ctx, W, H, t1, tt, P, a1);
+      if (a2 > 0.001) phase2(ctx, W, H, t2, P, a2, ptr);
+
+      // family "illustrative" tag (bottom right)
+      ctx.globalAlpha = 0.8;
+      ctx.font = F10; ctx.fillStyle = P.soft; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('illustrative', W - 12, H - 12);
+      ctx.globalAlpha = 1;
+    }
+  };
+})();
+/* ---- scene: jcp ---- */
+(function () {
+  window.KHAnims = window.KHAnims || {};
+
+  var PERIOD = 15;
+  var TAU = Math.PI * 2;
+  var MONO = '500 10px "IBM Plex Mono", Consolas, monospace';
+  var MONO11 = '500 11px "IBM Plex Mono", Consolas, monospace';
+
+  // Seven profiler indicators (ms_v5.md abbreviations). The first three are the retained triple.
+  var CHIPS = ['T', 'ORP', 'DO', 'pH', 'EC25', 'Turb', 'Chl-a'];
+  var NC = 7, NR = 6; // illustrative grid: survey columns x thermal layers (surface at top)
+
+  // CCME classes 1..5 = Poor, Marginal, Fair, Good, Excellent. Illustrative true classes per [col][row].
+  var TRUE = [
+    [5, 5, 5, 4, 4, 4],
+    [5, 5, 4, 4, 4, 3],
+    [5, 4, 4, 3, 3, 2],
+    [4, 4, 3, 2, 2, 1],
+    [4, 4, 3, 2, 1, 1],
+    [5, 4, 4, 3, 2, 2],
+    [5, 5, 4, 4, 4, 4]
+  ];
+  // B: T, ORP, DO alone. Dropping compliant indicators inflates the failure shares, so classes fall.
+  // 18 of 42 cells change (24 of 42 = 57% kept). Excellent and Poor cells cannot fall, so they stay.
+  var DROP = [
+    [0, 0, 0, 1, 0, 1],
+    [0, 0, 1, 0, 1, 1],
+    [0, 1, 0, 1, 0, 0],
+    [1, 0, 1, 1, 0, 0],
+    [0, 1, 1, 1, 0, 0],
+    [0, 0, 1, 0, 1, 1],
+    [0, 0, 0, 1, 0, 1]
+  ];
+  var RED = [], ANC = [], nDrop = 0;
+  for (var c0 = 0; c0 < NC; c0++) {
+    RED.push([]); ANC.push([]);
+    for (var r0 = 0; r0 < NR; r0++) {
+      var tv = TRUE[c0][r0];
+      var rv = DROP[c0][r0] ? Math.max(1, tv - 1) : tv;
+      if (rv !== tv) nDrop++;
+      RED[c0].push(rv);
+      ANC[c0].push(tv);
+    }
+  }
+  // C: anchored index. One cell of 42 stays wrong (41 of 42 kept, about 97%), and it errs upward:
+  // its errors only overstate quality.
+  ANC[4][2] = 4;
+
+  // seeded PRNG for the drifting particles
+  var seed = 20231;
+  function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  var DOTS = [];
+  for (var i = 0; i < 14; i++) DOTS.push({ x: rnd(), y: 0.15 + rnd() * 0.8, ph: rnd() * TAU, a: 2 + rnd() * 5, s: rnd() < 0.5 ? 1 : 2 });
+
+  var rgbCache = null, rgbKey = '';
+  function hex(h) { return [parseInt(h.substr(1, 2), 16), parseInt(h.substr(3, 2), 16), parseInt(h.substr(5, 2), 16)]; }
+  function palette(P) {
+    if (rgbKey === P.teal + P.coral) return rgbCache;
+    rgbKey = P.teal + P.coral;
+    rgbCache = {
+      cls: [null,
+        { c: hex(P.coral), a: 0.9 },   // 1 Poor
+        { c: hex(P.sand), a: 0.82 },   // 2 Marginal
+        { c: hex(P.soft), a: 0.62 },   // 3 Fair (neutral; chl is kept for chlorophyll)
+        { c: hex(P.teal), a: 0.45 },   // 4 Good
+        { c: hex(P.teal), a: 0.85 }    // 5 Excellent
+      ]
+    };
+    return rgbCache;
+  }
+  function clsColor(pal, a, b, k) {
+    var A = pal.cls[a], B = pal.cls[b];
+    if (k <= 0 || a === b) return 'rgba(' + A.c[0] + ',' + A.c[1] + ',' + A.c[2] + ',' + A.a + ')';
+    var r = Math.round(A.c[0] + (B.c[0] - A.c[0]) * k), g = Math.round(A.c[1] + (B.c[1] - A.c[1]) * k),
+      bl = Math.round(A.c[2] + (B.c[2] - A.c[2]) * k), al = A.a + (B.a - A.a) * k;
+    return 'rgba(' + r + ',' + g + ',' + bl + ',' + al.toFixed(3) + ')';
+  }
+
+  function clamp(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function ease(x) { x = clamp(x); return 0.5 - 0.5 * Math.cos(Math.PI * x); }
+
+  // timeline: A hold, A->B, B hold, B->C, C hold, C->A
+  var TS = [3.6, 8.4, 13.2];
+  var SWEEP0 = 0.2, SWEEP = 1.1, CELL = 0.45;
+  var GRIDS = [TRUE, RED, ANC];
+
+  // which transition window we are in (or the last one passed) -> from/to state indices
+  function phase(p) {
+    if (p < TS[0]) return { i: -1, from: 0, to: 0, s: -99 };
+    if (p < TS[1]) return { i: 0, from: 0, to: 1, s: TS[0] };
+    if (p < TS[2]) return { i: 1, from: 1, to: 2, s: TS[1] };
+    return { i: 2, from: 2, to: 0, s: TS[2] };
+  }
+  function cellK(p, s, c, r) { return ease((p - s - SWEEP0 - (c / NC) * SWEEP - r * 0.03) / CELL); }
+
+  // chip weights for the four omitted indicators: lit, dropped, anchored
+  function chipW(p) {
+    var ph = phase(p), k = ease((p - ph.s) / 0.6);
+    var W3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    var a = W3[ph.from], b = W3[ph.to];
+    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  }
+
+  function layout(W, H) {
+    var small = W < 380, pad = 12;
+    var L = { small: small, pad: pad };
+    L.chipW = small ? 46 : 54; L.dotX = small ? 6 : 8; L.txX = small ? 12 : 15; L.chipH = small ? 17 : 18; L.chipGap = small ? 3 : 4;
+    L.top = 32;
+    L.brX = pad + L.chipW + 5;
+    L.gx = L.brX + (small ? 20 : 24);
+    L.rw = small ? 92 : 150;
+    L.rx = W - pad - L.rw;
+    var axis = small ? 10 : 34;
+    var availW = L.rx - axis - L.gx;
+    L.pw = Math.min(30, availW / NC);
+    L.gw = L.pw * NC;
+    L.gb = H - 32;
+    L.ph = (L.gb - L.top) / NR;
+    L.gh = L.ph * NR;
+    L.big = 22;   // family numeral size
+    return L;
+  }
+
+  function txt(ctx, s, x, y, col, a, font, align) {
+    if (a <= 0.01) return;
+    ctx.globalAlpha = a; ctx.fillStyle = col; ctx.font = font || MONO; ctx.textAlign = align || 'left';
+    ctx.fillText(s, x, y);
+  }
+
+  function draw(ctx, W, H, t, P, ptr) {
+    var p = ((t % PERIOD) + PERIOD) % PERIOD;
+    var L = layout(W, H), pal = palette(P);
+    var ph = phase(p);
+
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.textBaseline = 'alphabetic';
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, P.top); g.addColorStop(1, P.deep);
+    ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    // drifting particles, seamless over the period
+    ctx.fillStyle = P.chl;
+    var w = TAU * p / PERIOD;
+    for (var d = 0; d < DOTS.length; d++) {
+      var D = DOTS[d];
+      ctx.globalAlpha = 0.16 + 0.1 * Math.sin(w + D.ph);
+      ctx.beginPath();
+      ctx.arc(D.x * W + D.a * Math.sin(w + D.ph), D.y * H + D.a * 0.6 * Math.cos(w * 2 + D.ph), D.s * 0.6 + 0.4, 0, TAU);
+      ctx.fill();
+    }
+
+    // ---- headers
+    txt(ctx, 'indicators', L.pad, 20, P.soft, 1);
+    txt(ctx, L.small ? 'CCME class' : 'CCME class by layer', L.gx, 20, P.soft, 1);
+
+    // ---- indicator chips
+    var cw = chipW(p);
+    for (var i = 0; i < 7; i++) {
+      var y = L.top + i * (L.chipH + L.chipGap), x = L.pad;
+      var wl = i < 3 ? 1 : cw[0], wd = i < 3 ? 0 : cw[1], wn = i < 3 ? 0 : cw[2];
+      if (wl > 0.01) {
+        ctx.globalAlpha = 0.9 * wl; ctx.fillStyle = P.grid; ctx.fillRect(x, y, L.chipW, L.chipH);
+        ctx.globalAlpha = 0.85 * wl; ctx.strokeStyle = P.teal; ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, L.chipW - 1, L.chipH - 1);
+      }
+      if (wd > 0.01) {
+        ctx.globalAlpha = 0.6 * wd; ctx.strokeStyle = P.grid; ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, L.chipW - 1, L.chipH - 1);
+      }
+      if (wn > 0.01) {
+        ctx.globalAlpha = 0.9 * wn; ctx.strokeStyle = P.sand; ctx.lineWidth = 1;
+        ctx.setLineDash([3, 2]);
+        ctx.strokeRect(x + 0.5, y + 0.5, L.chipW - 1, L.chipH - 1);
+        ctx.setLineDash([]);
+      }
+      // status dot: filled when measured, hollow when anchored
+      var dx = x + L.dotX, dy = y + L.chipH / 2;
+      if (wl > 0.01) { ctx.globalAlpha = wl; ctx.fillStyle = P.teal; ctx.beginPath(); ctx.arc(dx, dy, 2.2, 0, TAU); ctx.fill(); }
+      if (wn > 0.01) { ctx.globalAlpha = wn; ctx.strokeStyle = P.sand; ctx.beginPath(); ctx.arc(dx, dy, 2.2, 0, TAU); ctx.stroke(); }
+      var ta = wl + wd * 0.32 + wn * 0.85;
+      txt(ctx, CHIPS[i], x + L.txX, y + L.chipH / 2 + 4, wn > wl ? P.soft : P.text, ta, MONO11);
+    }
+    // bracket on the four omitted indicators: "dropped" then "anchored"
+    var bw = Math.max(cw[1], cw[2]);
+    if (bw > 0.01) {
+      var by0 = L.top + 3 * (L.chipH + L.chipGap) + 1, by1 = L.top + 7 * (L.chipH + L.chipGap) - L.chipGap - 1;
+      ctx.globalAlpha = 0.7 * bw; ctx.strokeStyle = cw[2] > cw[1] ? P.sand : P.soft; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(L.brX - 2, by0 + 0.5); ctx.lineTo(L.brX + 1.5, by0 + 0.5); ctx.lineTo(L.brX + 1.5, by1 - 0.5); ctx.lineTo(L.brX - 2, by1 - 0.5);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(L.brX + 12, (by0 + by1) / 2); ctx.rotate(-Math.PI / 2);
+      txt(ctx, 'dropped', 0, 0, P.soft, cw[1] * 0.9, MONO, 'center');
+      txt(ctx, 'anchored', 0, 0, P.sand, cw[2], MONO, 'center');
+      ctx.restore();
+    }
+
+    // ---- grid of layer classes
+    var gx = L.gx, gy = L.top, gap = L.small ? 2 : 3;
+    var from = GRIDS[ph.from], to = GRIDS[ph.to];
+    for (var c = 0; c < NC; c++) {
+      for (var r = 0; r < NR; r++) {
+        var k = ph.i < 0 ? 0 : cellK(p, ph.s, c, r);
+        var a0 = from[c][r], b0 = to[c][r];
+        var cx = gx + c * L.pw, cy = gy + r * L.ph;
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = clsColor(pal, a0, b0, k);
+        ctx.fillRect(cx, cy, L.pw - gap, L.ph - gap);
+        // outline cells whose class differs from the full index
+        var wrongA = a0 !== TRUE[c][r] ? 1 : 0, wrongB = b0 !== TRUE[c][r] ? 1 : 0;
+        var wo = wrongA + (wrongB - wrongA) * k;
+        if (wo > 0.02) {
+          ctx.globalAlpha = 0.9 * wo; ctx.strokeStyle = P.text; ctx.lineWidth = 1;
+          ctx.strokeRect(cx + 0.5, cy + 0.5, L.pw - gap - 1, L.ph - gap - 1);
+        }
+      }
+    }
+    // pointer: soft outline of the survey column under the pointer
+    if (ptr && ptr.active) {
+      var px = ptr.x * W, py = ptr.y * H;
+      if (px >= gx && px < gx + L.gw && py >= gy && py < gy + L.gh) {
+        var pc = Math.floor((px - gx) / L.pw);
+        ctx.globalAlpha = 0.6; ctx.strokeStyle = P.sand; ctx.lineWidth = 1;
+        ctx.strokeRect(gx + pc * L.pw - 1.5, gy - 1.5, L.pw - gap + 3, L.gh - gap + 3);
+      }
+    }
+    // recompute sweep: a thin line passing the survey columns
+    if (ph.i >= 0) {
+      var sf = (p - ph.s - SWEEP0) / SWEEP;
+      if (sf > -0.02 && sf < 1.06) {
+        var sx = gx + sf * L.gw;
+        ctx.globalAlpha = 0.85 * Math.sin(Math.PI * clamp(sf / 1.04));
+        ctx.strokeStyle = P.sand; ctx.lineWidth = 1;
+        ctx.shadowColor = P.sand; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.moveTo(sx, gy - 4); ctx.lineTo(sx, gy + L.gh + 1); ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+    }
+    // depth axis to the right of the grid (wide layouts only)
+    if (!L.small) {
+      var ax = gx + L.gw + 6;
+      ctx.globalAlpha = 0.6; ctx.strokeStyle = P.soft; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(ax, gy + 2); ctx.lineTo(ax, gy + L.gh - 6);
+      ctx.moveTo(ax - 2.5, gy + L.gh - 9); ctx.lineTo(ax, gy + L.gh - 5); ctx.lineTo(ax + 2.5, gy + L.gh - 9); ctx.stroke();
+      ctx.save();
+      ctx.translate(ax + 11, gy + L.gh / 2); ctx.rotate(-Math.PI / 2);
+      txt(ctx, 'layer depth', 0, 0, P.soft, 0.9, MONO, 'center');
+      ctx.restore();
+    }
+
+    // ---- legend + honesty label
+    var ly = H - 12, lx = gx;
+    txt(ctx, 'Poor', lx, ly, P.soft, 1);
+    var sqx = lx + ctx.measureText('Poor').width + 5;
+    for (var q = 1; q <= 5; q++) {
+      ctx.globalAlpha = 1; ctx.fillStyle = clsColor(pal, q, q, 0);
+      ctx.fillRect(sqx + (q - 1) * 11, ly - 8, 9, 9);
+    }
+    txt(ctx, 'Excellent', sqx + 5 * 11 + 3, ly, P.soft, 1);
+    txt(ctx, 'illustrative', W - L.pad, ly, P.soft, 0.8, MONO, 'right');
+
+    // ---- agreement readout
+    var rx = L.rx, ry = gy + 6;
+    var rk = ph.i < 0 ? 1 : ease((p - ph.s - 0.6) / 1.0);
+    var oldA = rk < 0.45 ? 1 - rk / 0.45 : 0, newA = rk > 0.55 ? (rk - 0.55) / 0.45 : 0;
+    var S = [
+      { lab: 'full index', big: '7/7', sub: L.small ? 'measured' : 'indicators measured', col: P.text, bar: 1, barCol: P.soft },
+      { lab: 'classes matched', big: '57%', sub: 'T, ORP, DO only', col: P.sand, bar: 0.57, barCol: P.sand },
+      { lab: 'classes matched', big: '97%', sub: '+4 anchored', col: P.teal, bar: 0.97, barCol: P.teal }
+    ];
+    var sA = S[ph.from], sB = S[ph.to];
+    if (ph.i < 0) { oldA = 1; newA = 0; }
+    var bigY = ry + 14 + L.big;
+    var BIG = '800 ' + L.big + 'px "Bricolage Grotesque", "Segoe UI", sans-serif';
+    var barW = Math.min(L.rw - 4, 130), barY = bigY + 10;
+    function block(s, a) {
+      if (a <= 0.01) return;
+      txt(ctx, s.lab, rx, ry + 8, P.soft, a);
+      txt(ctx, s.big, rx, bigY, s.col, a, BIG);
+      txt(ctx, s.sub, rx, bigY + 30, P.text, a * 0.9);
+      if (s === S[2]) {
+        txt(ctx, 'light profiled', rx, bigY + 45, P.soft, a * 0.85);
+        // keep the 57% of the three-indicator index in view, so the still frame shows both results
+        txt(ctx, 'T, ORP, DO: 57%', rx, bigY + 64, P.sand, a * 0.9);
+        ctx.globalAlpha = a * 0.9; ctx.strokeStyle = P.sand; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(rx + barW * 0.57, barY - 3); ctx.lineTo(rx + barW * 0.57, barY + 6); ctx.stroke();
+      }
+    }
+    if (sA === sB) block(sA, 1); else { block(sA, oldA); block(sB, newA); }
+    // agreement bar (track + fill), width eases between the real values
+    var bv = sA.bar + (sB.bar - sA.bar) * rk;
+    ctx.globalAlpha = 1; ctx.fillStyle = P.grid; ctx.fillRect(rx, barY, barW, 3);
+    ctx.fillStyle = rk < 0.5 ? sA.barCol : sB.barCol;
+    ctx.globalAlpha = 0.95; ctx.fillRect(rx, barY, barW * bv, 3);
+
+    ctx.restore();
+  }
+
+  window.KHAnims.jcp = {
+    period: PERIOD,
+    still: 11.5,
+    alt: 'Seven indicator chips beside a grid of reservoir layer classes: keeping only temperature, ORP and DO flips many classes and matches 57%, while anchoring the other four as compliant brings agreement back to 97%.',
+    draw: draw
+  };
+})();
+/* ---- scene: rse ---- */
+(function () {
+  window.KHAnims = window.KHAnims || {};
+
+  // ---- precompute (seeded, no randomness inside draw) ----
+  var seed = 20240917;
+  function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+
+  var N = 101, DZ = 0.05;            // optical depth 0..5
+  var ZPK = 3.65, SIG = 0.55, ZEU = 4.6; // illustrative peak inside the real 3.4-3.9 band; euphotic base = 1% light
+  var cn = new Array(N), ex = new Array(N);
+
+  function rawC(z, b) {
+    var base = z < ZPK ? b : b * Math.exp(-(z - ZPK) * 1.5);
+    return base + Math.exp(-(z - ZPK) * (z - ZPK) / (2 * SIG * SIG));
+  }
+  function frac(b) { // share of euphotic (0..ZEU) area that lies above z90 (0..1)
+    var a1 = 0, a2 = 0, s = 0.01;
+    for (var z = s / 2; z < ZEU; z += s) { var v = rawC(z, b) * s; a2 += v; if (z < 1) a1 += v; }
+    return a1 / a2;
+  }
+  // choose the base so the drawn shape matches the real finding (about 10% above z90)
+  var lo = 0.01, hi = 2;
+  for (var k = 0; k < 40; k++) { var mid = (lo + hi) / 2; if (frac(mid) < 0.1) lo = mid; else hi = mid; }
+  var B = (lo + hi) / 2, cmax = 0;
+  for (var i = 0; i < N; i++) { cn[i] = rawC(i * DZ, B); if (cn[i] > cmax) cmax = cn[i]; ex[i] = Math.exp(-i * DZ); }
+  for (i = 0; i < N; i++) cn[i] /= cmax;
+
+  var NPX = 60, pxb = new Array(NPX);
+  for (i = 0; i < NPX; i++) pxb[i] = rnd();
+  var ND = 12, dz = [], dfx = [], dph = [];
+  for (i = 0; i < ND; i++) { dz.push(3.2 + rnd() * 0.9); dfx.push(0.1 + rnd() * 0.8); dph.push(rnd() * 6.283); }
+
+  function cAt(z) { var f = z / DZ, j = Math.min(N - 2, Math.floor(f)), r = f - j; return cn[j] + (cn[j + 1] - cn[j]) * r; }
+  function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function ease(v) { v = clamp(v); return 0.5 - 0.5 * Math.cos(Math.PI * v); }
+
+  var F10 = '500 10px "IBM Plex Mono", Consolas, monospace';
+  var F11 = '500 11px "IBM Plex Mono", Consolas, monospace';
+  var TAU = Math.PI * 2;
+
+  window.KHAnims.rse = {
+    period: 16,
+    still: 12.6,
+    alt: 'A satellite crosses the sky and lights a row of Sentinel-2 pixels on the water; below, on an optical-depth axis, light fades by z90 at one optical depth while chlorophyll peaks 3.4 to 3.9 optical depths down, so about 90% of euphotic chlorophyll lies below what the sensors see.',
+    draw: function (ctx, W, H, t, P, ptr) {
+      var per = 16, u = (t % per) / per, small = W < 380;
+      var g = u < 0.9 ? 1 : 0.5 + 0.5 * Math.cos(Math.PI * (u - 0.9) / 0.1); // loop fade
+
+      // geometry
+      var skyB = 40, yS = 48, yB = H - 14, ax = 38;
+      var xMax = Math.round(W * 0.6), rx = xMax + 8;
+      var wC = (xMax - ax) * 0.62, wL = (xMax - ax) * 0.75;
+      function yz(z) { return yS + z * (yB - yS) / 5; }
+      function xc(z) { return ax + wC * cAt(z); }
+
+      // background water + sky band
+      var gr = ctx.createLinearGradient(0, 0, 0, H);
+      gr.addColorStop(0, P.top); gr.addColorStop(1, P.deep);
+      ctx.globalAlpha = 1; ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+      var gs = ctx.createLinearGradient(0, 0, 0, skyB);
+      gs.addColorStop(0, P.sky); gs.addColorStop(1, P.top);
+      ctx.globalAlpha = 0.8; ctx.fillStyle = gs; ctx.fillRect(0, 0, W, skyB);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+      // sensed layer wash (surface to z90)
+      ctx.globalAlpha = 0.07; ctx.fillStyle = P.teal; ctx.fillRect(ax, yS, W - 12 - ax, yz(1) - yS);
+
+      // satellite pass and Sentinel-2 pixels
+      var satOn = u < 0.88, sx = -20 + (W + 40) * (u / 0.88), sy = 17;
+      var pitch = small ? 9 : 10, ps = pitch - 2, npx = Math.min(NPX, Math.floor((W - 12 - ax + 2) / pitch));
+      if (satOn) {
+        ctx.globalAlpha = 0.10; ctx.fillStyle = P.sand;
+        ctx.beginPath(); ctx.moveTo(sx, sy + 3); ctx.lineTo(sx + 13, skyB); ctx.lineTo(sx - 13, skyB); ctx.closePath(); ctx.fill();
+      }
+      for (i = 0; i < npx; i++) {
+        var px = ax + i * pitch, pc = px + ps / 2;
+        var lit = satOn ? clamp((sx - pc) / 22) : 1;
+        lit *= g;
+        ctx.globalAlpha = 0.13 * (1 - lit);
+        ctx.fillStyle = P.soft; ctx.fillRect(px, skyB, ps, ps);
+        if (lit > 0.01) {
+          var b = pxb[i];
+          ctx.globalAlpha = lit * (0.3 + 0.55 * b);
+          ctx.fillStyle = b > 0.82 ? P.chl : P.teal;
+          ctx.fillRect(px, skyB, ps, ps);
+        }
+        if (satOn && Math.abs(sx - pc) < 10) {
+          ctx.globalAlpha = 0.9 * (1 - Math.abs(sx - pc) / 10); ctx.strokeStyle = P.sand; ctx.lineWidth = 1;
+          ctx.strokeRect(px + 0.5, skyB + 0.5, ps - 1, ps - 1);
+        }
+      }
+      if (satOn) { // satellite body + panels
+        ctx.globalAlpha = 1; ctx.fillStyle = P.soft;
+        ctx.fillRect(sx - 13, sy - 1.5, 8, 3); ctx.fillRect(sx + 5, sy - 1.5, 8, 3);
+        ctx.fillStyle = P.sand; ctx.fillRect(sx - 3, sy - 2.5, 6, 5);
+      }
+
+      // small drone hovering (follows the pointer gently)
+      var dxp = ptr && ptr.active ? Math.max(rx + 16, Math.min(W - 26, ptr.x * W)) : rx + (W - 12 - rx) * 0.62 + 5 * Math.sin(TAU * u * 2);
+      var dyp = 27 + 1.5 * Math.sin(TAU * u * 3);
+      ctx.globalAlpha = 0.09; ctx.fillStyle = P.sand;
+      ctx.beginPath(); ctx.moveTo(dxp - 2, dyp + 2); ctx.lineTo(dxp + 2, dyp + 2); ctx.lineTo(dxp + 8, skyB); ctx.lineTo(dxp - 8, skyB); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1; ctx.strokeStyle = P.soft; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(dxp - 8, dyp - 2); ctx.lineTo(dxp + 8, dyp - 2);
+      ctx.moveTo(dxp - 11, dyp - 4); ctx.lineTo(dxp - 5, dyp - 4); ctx.moveTo(dxp + 5, dyp - 4); ctx.lineTo(dxp + 11, dyp - 4); ctx.stroke();
+      ctx.fillStyle = P.text; ctx.fillRect(dxp - 3, dyp - 3, 6, 3);
+
+      // water surface
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = P.teal; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(ax, yS + 0.5); ctx.lineTo(W - 12, yS + 0.5); ctx.stroke();
+
+      // optical depth axis
+      ctx.globalAlpha = 0.8; ctx.strokeStyle = P.soft;
+      ctx.beginPath(); ctx.moveTo(ax + 0.5, yS); ctx.lineTo(ax + 0.5, yB);
+      for (var zt = 0; zt <= 5; zt++) { var yt = Math.round(yz(zt)) + 0.5; ctx.moveTo(ax - 3, yt); ctx.lineTo(ax + 0.5, yt); }
+      ctx.stroke();
+      ctx.font = F10; ctx.fillStyle = P.soft; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      for (zt = 0; zt <= 5; zt++) ctx.fillText(String(zt), ax - 6, yz(zt) + (zt === 0 ? 3 : 0));
+      ctx.save(); ctx.translate(15, (yS + yB) / 2); ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center'; ctx.fillText('optical depth', 0, 0); ctx.restore();
+      // real chlorophyll-maximum band on the axis (median 3.4 to 3.9)
+      ctx.globalAlpha = 1; ctx.strokeStyle = P.chl; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(ax + 0.5, yz(3.4)); ctx.lineTo(ax + 0.5, yz(3.9)); ctx.stroke();
+
+      // chlorophyll fill grows downward over the loop
+      var zf = ZEU * ease((u - 0.18) / 0.42);
+      function fillBand(za, zb, col, al) {
+        if (zb <= za + 0.001) return;
+        ctx.globalAlpha = al; ctx.fillStyle = col; ctx.beginPath();
+        ctx.moveTo(ax + 1, yz(za)); ctx.lineTo(xc(za), yz(za));
+        for (var j = Math.ceil(za / DZ + 1e-6); j * DZ < zb; j++) ctx.lineTo(ax + wC * cn[j], yz(j * DZ));
+        ctx.lineTo(xc(zb), yz(zb)); ctx.lineTo(ax + 1, yz(zb)); ctx.closePath(); ctx.fill();
+      }
+      fillBand(0, Math.min(zf, 1), P.teal, 0.45 * g);
+      fillBand(1, zf, P.chl, 0.32 * g);
+
+      // euphotic base (faint)
+      ctx.globalAlpha = 0.35; ctx.strokeStyle = P.soft; ctx.lineWidth = 1; ctx.setLineDash([1, 3]);
+      ctx.beginPath(); ctx.moveTo(ax, Math.round(yz(ZEU)) + 0.5); ctx.lineTo(xMax, Math.round(yz(ZEU)) + 0.5); ctx.stroke();
+      // z90 dashed line
+      ctx.setLineDash([4, 3]); ctx.globalAlpha = 0.95; ctx.strokeStyle = P.sand;
+      ctx.beginPath(); ctx.moveTo(ax, Math.round(yz(1)) + 0.5); ctx.lineTo(W - 12, Math.round(yz(1)) + 0.5); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // chlorophyll dots near the maximum
+      ctx.fillStyle = P.chl;
+      for (i = 0; i < ND; i++) {
+        var zz = dz[i] + 0.06 * Math.sin(TAU * u + dph[i]);
+        var xx = ax + 3 + (xc(zz) - ax - 6) * dfx[i];
+        ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(xx, yz(zz), 1.2, 0, TAU); ctx.fill();
+      }
+
+      // light (PAR) curve
+      ctx.globalAlpha = 1; ctx.strokeStyle = P.sand; ctx.lineWidth = 1.5; ctx.beginPath();
+      for (i = 0; i < N; i++) { var xl = ax + wL * ex[i], yl = yz(i * DZ); if (i === 0) ctx.moveTo(xl, yl); else ctx.lineTo(xl, yl); }
+      ctx.stroke();
+      // chlorophyll curve
+      ctx.strokeStyle = P.chl; ctx.beginPath();
+      for (i = 0; i < N; i++) { var xq = ax + wC * cn[i], yq = yz(i * DZ); if (i === 0) ctx.moveTo(xq, yq); else ctx.lineTo(xq, yq); }
+      ctx.stroke();
+
+      // in-plot labels
+      ctx.font = F10; ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 1; ctx.fillStyle = P.sand; ctx.textAlign = 'left';
+      ctx.fillText(small ? 'light' : 'light (PAR)', ax + wL + 6, yS + 9);
+      ctx.textAlign = 'right';
+      ctx.fillText('z90 · sensed layer', xMax, yz(1) + 10);
+      ctx.fillStyle = P.chl; ctx.textAlign = 'left';
+      var xpk = ax + wC + 6;
+      if (small) { ctx.fillText('chl max', xpk, yz(ZPK) - 6); ctx.fillText('3.4–3.9', xpk, yz(ZPK) + 6); }
+      else ctx.fillText('chl max 3.4–3.9 OD', xpk, yz(ZPK));
+      ctx.fillStyle = P.soft; ctx.textAlign = 'right';
+      if (!small) ctx.fillText('euphotic base', xMax, yz(ZEU) - 7);
+
+      // right column: brackets and shares
+      var a10 = ease((zf - 0.85) / 0.35) * g, a90 = ease((zf - 4.0) / 0.6) * g;
+      ctx.lineWidth = 1;
+      if (a10 > 0.01) {
+        ctx.globalAlpha = a10; ctx.strokeStyle = P.teal;
+        ctx.beginPath(); ctx.moveTo(rx - 3, yS + 2); ctx.lineTo(rx, yS + 2); ctx.lineTo(rx, yz(1) - 2); ctx.lineTo(rx - 3, yz(1) - 2); ctx.stroke();
+        ctx.fillStyle = P.teal; ctx.textAlign = 'left'; ctx.font = F11;
+        ctx.fillText('about 10%', rx + 7, yz(0.33));
+        ctx.font = F10; ctx.fillText('seen', rx + 7, yz(0.72));
+      }
+      if (a90 > 0.01) {
+        ctx.globalAlpha = a90; ctx.strokeStyle = P.chl;
+        ctx.beginPath(); ctx.moveTo(rx - 3, yz(1) + 2); ctx.lineTo(rx, yz(1) + 2); ctx.lineTo(rx, yz(ZEU)); ctx.lineTo(rx - 3, yz(ZEU)); ctx.stroke();
+        ctx.fillStyle = P.chl; ctx.textAlign = 'left'; ctx.font = F11;
+        ctx.fillText('about 90%', rx + 7, yz(2.05));
+        ctx.font = F10; ctx.fillText('below z90', rx + 7, yz(2.5));
+        ctx.fillStyle = P.soft; ctx.fillText('of euphotic chl-a', rx + 7, yz(2.5) + 12);
+      }
+
+      // counter (verified totals)
+      ctx.globalAlpha = 0.95; ctx.fillStyle = P.soft; ctx.font = F10; ctx.textAlign = 'right';
+      var cy = H - 28;
+      ctx.fillText(small ? '501 casts' : '501 profiler casts', W - 12, cy);
+      ctx.fillText('5 drone surveys', W - 12, cy - 12);
+      ctx.fillText('43 S2 scenes', W - 12, cy - 24);
+
+      // family "illustrative" tag (bottom right)
+      ctx.textBaseline = 'alphabetic'; ctx.globalAlpha = 0.8;
+      ctx.fillText('illustrative', W - 12, H - 12);
+      ctx.globalAlpha = 1; ctx.textAlign = 'left';
+    }
+  };
+})();
+/* ---- scene: ecm ---- */
+(function () {
+  window.KHAnims = window.KHAnims || {};
+
+  var PER = 16;              // seconds per simulated 24 h
+  var TAU = Math.PI * 2;
+  var MONO = '500 10px "IBM Plex Mono", Consolas, monospace';
+  var MONO11 = '500 11px "IBM Plex Mono", Consolas, monospace';
+
+  // smooth on/off window (cosine ramps of width r around [a, b])
+  function win(h, a, b, r) {
+    if (h < a - r || h > b + r) return 0;
+    if (h < a) return 0.5 - 0.5 * Math.cos(Math.PI * (h - (a - r)) / r);
+    if (h > b) return 0.5 + 0.5 * Math.cos(Math.PI * (h - b) / r);
+    return 1;
+  }
+  function pumpEnv(h) { return win(h, 0.9, 5.1, 0.9); }     // cheap night power
+  function genEnv(h) { return win(h, 17.6, 20.6, 0.9); }    // evening peak
+
+  // illustrative day-ahead price shape: low at night, morning shoulder, evening peak
+  function gauss(h, c, s) {
+    var d = Math.abs(h - c); if (d > 12) d = 24 - d;
+    return Math.exp(-0.5 * d * d / (s * s));
+  }
+  var NP = 49, PR = new Array(NP), pmax = 0, pmin = 9, i;
+  for (i = 0; i < NP; i++) {
+    var hh = i * 0.5;
+    PR[i] = 0.16 + 0.30 * gauss(hh, 8.5, 1.8) + 0.20 * gauss(hh, 13, 2.6) + 0.85 * gauss(hh, 19, 1.5);
+    if (PR[i] > pmax) pmax = PR[i];
+    if (PR[i] < pmin) pmin = PR[i];
+  }
+  for (i = 0; i < NP; i++) PR[i] = (PR[i] - pmin) / (pmax - pmin);
+  function price(h) {
+    var x = h * 2, k = Math.floor(x); if (k >= NP - 1) return PR[NP - 1];
+    return PR[k] + (PR[k + 1] - PR[k]) * (x - k);
+  }
+
+  // upper-reservoir fullness: integral of pumping minus generating, balanced over 24 h
+  var NL = 241, FL = new Array(NL), sp = 0, sg = 0, dh = 24 / (NL - 1);
+  for (i = 0; i < NL; i++) { sp += pumpEnv(i * dh); sg += genEnv(i * dh); }
+  var kg = sp / sg, acc = 0, fmin = 0, fmax = 0;
+  for (i = 0; i < NL; i++) {
+    FL[i] = acc;
+    if (acc < fmin) fmin = acc; if (acc > fmax) fmax = acc;
+    acc += (pumpEnv(i * dh) - kg * genEnv(i * dh)) * dh;
+  }
+  for (i = 0; i < NL; i++) FL[i] = (FL[i] - fmin) / (fmax - fmin);
+  function full(h) {
+    var x = h / dh, k = Math.floor(x); if (k >= NL - 1) return FL[NL - 1];
+    return FL[k] + (FL[k + 1] - FL[k]) * (x - k);
+  }
+
+  // terrain profile (x as fraction of W, y as fraction of scene height Hs)
+  var TER = [
+    [0, 0.26], [0.035, 0.26], [0.05, 0.52], [0.19, 0.52], [0.205, 0.25], [0.225, 0.25],
+    [0.25, 0.33], [0.39, 0.57], [0.405, 0.57], [0.42, 0.79], [0.535, 0.79], [0.55, 0.55],
+    [0.57, 0.55], [0.60, 0.63], [0.665, 0.78], [0.68, 0.98], [0.79, 0.98], [0.805, 0.77],
+    [0.825, 0.77], [0.855, 0.91], [1, 0.91]
+  ];
+  // basins: rim y, bottom y, left top x, left bottom x, right top x, right bottom x
+  var BAS = [
+    { ry: 0.26, by: 0.52, lt: 0.035, lb: 0.05, rt: 0.205, rb: 0.19, name: 'upper' },
+    { ry: 0.57, by: 0.79, lt: 0.405, lb: 0.42, rt: 0.55, rb: 0.535, name: 'middle' },
+    { ry: 0.78, by: 0.98, lt: 0.665, lb: 0.68, rt: 0.805, rb: 0.79, name: 'lower' }
+  ];
+  // penstocks (top -> powerhouse), as fractions
+  var PEN = [
+    [[0.232, 0.275], [0.258, 0.345], [0.378, 0.545]],
+    [[0.576, 0.525], [0.606, 0.605], [0.652, 0.735]]
+  ];
+  var NPART = 7;
+
+  function ptOnPen(pen, s, W, Hs, out) {
+    // two segments, split by length in fractional space (good enough for small pipes)
+    var ax = pen[0][0] * W, ay = pen[0][1] * Hs, bx = pen[1][0] * W, by = pen[1][1] * Hs, cx = pen[2][0] * W, cy = pen[2][1] * Hs;
+    var l1 = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+    var l2 = Math.sqrt((cx - bx) * (cx - bx) + (cy - by) * (cy - by));
+    var d = s * (l1 + l2);
+    if (d < l1) { var u = d / l1; out[0] = ax + (bx - ax) * u; out[1] = ay + (by - ay) * u; }
+    else { var v = (d - l1) / l2; out[0] = bx + (cx - bx) * v; out[1] = by + (cy - by) * v; }
+  }
+  var TMP = [0, 0];
+
+  function waterQuad(ctx, b, level, W, Hs) {
+    // level is a y-fraction between rim and bottom; walls are linear
+    var f = (level - b.ry) / (b.by - b.ry);
+    var xl = (b.lt + (b.lb - b.lt) * f) * W, xr = (b.rt + (b.rb - b.rt) * f) * W;
+    ctx.beginPath();
+    ctx.moveTo(xl, level * Hs);
+    ctx.lineTo(xr, level * Hs);
+    ctx.lineTo(b.rb * W, b.by * Hs);
+    ctx.lineTo(b.lb * W, b.by * Hs);
+    ctx.closePath();
+    ctx.fill();
+    return [xl, xr];
+  }
+
+  window.KHAnims.ecm = {
+    period: PER,
+    still: 19.2 / 24 * PER,
+    alt: 'Illustrative day in a cascade of three reservoirs in arid hills: water is pumped uphill when electricity is cheap at night, runs back down through turbines at the evening price peak, and the lowest reservoir keeps a steady outflow to a town.',
+    draw: function (ctx, W, H, t, P, ptr) {
+      var u = (t % PER) / PER, h = u * 24;
+      var Hs = H - 64;                         // scene height; price strip below
+      var small = W < 380;
+      var pe = pumpEnv(h), ge = genEnv(h), fu = full(h);
+      var day = Math.max(0, Math.sin(Math.PI * (h - 6) / 12));
+
+      // background
+      var g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, P.top); g.addColorStop(1, P.deep);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // daylight wash over the sky
+      ctx.globalAlpha = 0.30 * day; ctx.fillStyle = P.sky; ctx.fillRect(0, 0, W, Hs);
+      ctx.globalAlpha = 1;
+
+      // sun / moon arc (drawn before terrain so the land hides its feet)
+      var acx = 0.78 * W, arx = 0.17 * W, aby = 0.44 * Hs, ary = 0.34 * Hs;
+      ctx.strokeStyle = P.grid; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+      ctx.beginPath(); ctx.ellipse(acx, aby, arx, ary, 0, Math.PI, TAU); ctx.stroke();
+      ctx.setLineDash([]);
+      var isDay = h >= 6 && h < 18;
+      var ang = isDay ? Math.PI * (h - 6) / 12 : Math.PI * (((h - 18) + 24) % 24) / 12;
+      var bx = acx - arx * Math.cos(ang), by = aby - ary * Math.sin(ang);
+      ctx.globalAlpha = Math.min(1, Math.sin(ang) * 4);
+      if (isDay) {
+        ctx.shadowColor = P.sand; ctx.shadowBlur = 8; ctx.fillStyle = P.sand;
+        ctx.beginPath(); ctx.arc(bx, by, 5.5, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
+      } else {
+        ctx.fillStyle = P.soft; ctx.beginPath(); ctx.arc(bx, by, 4.5, 0, TAU); ctx.fill();
+        ctx.fillStyle = P.top; ctx.globalAlpha *= 0.85;
+        ctx.beginPath(); ctx.arc(bx + 2.2, by - 1.4, 3.8, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // terrain
+      ctx.beginPath(); ctx.moveTo(0, Hs);
+      for (var k = 0; k < TER.length; k++) ctx.lineTo(TER[k][0] * W, TER[k][1] * Hs);
+      ctx.lineTo(W, Hs); ctx.closePath();
+      var tg = ctx.createLinearGradient(0, 0.25 * Hs, 0, Hs);
+      tg.addColorStop(0, P.sky); tg.addColorStop(1, P.deep);
+      ctx.fillStyle = tg; ctx.fill();
+      ctx.globalAlpha = 0.10; ctx.fillStyle = P.sand; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.beginPath();
+      for (k = 0; k < TER.length; k++) {
+        if (k) ctx.lineTo(TER[k][0] * W, TER[k][1] * Hs); else ctx.moveTo(TER[k][0] * W, TER[k][1] * Hs);
+      }
+      ctx.strokeStyle = P.sand; ctx.globalAlpha = 0.35; ctx.stroke(); ctx.globalAlpha = 1;
+
+      // water levels: upper rises when pumping, lower mirrors it; middle passes flow through
+      var lvU = 0.47 - 0.16 * fu, lvM = 0.62 + 0.012 * Math.sin(TAU * u), lvL = 0.83 + 0.08 * fu;
+      var lv = [lvU, lvM, lvL];
+      ctx.fillStyle = P.teal;
+      for (k = 0; k < 3; k++) {
+        ctx.globalAlpha = 0.55;
+        var xs = waterQuad(ctx, BAS[k], lv[k], W, Hs);
+        ctx.globalAlpha = 0.9; ctx.strokeStyle = P.teal;
+        ctx.beginPath(); ctx.moveTo(xs[0], lv[k] * Hs); ctx.lineTo(xs[1], lv[k] * Hs); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // dams (downstream walls)
+      ctx.fillStyle = P.soft;
+      for (k = 0; k < 3; k++) {
+        var b = BAS[k], x0 = b.rt * W, top = b.ry * Hs - 1;
+        ctx.beginPath();
+        ctx.moveTo(b.rb * W, b.by * Hs); ctx.lineTo(x0, top); ctx.lineTo(x0 + 0.018 * W, top);
+        ctx.lineTo(x0 + 0.034 * W, top + 0.12 * Hs); ctx.closePath();
+        ctx.globalAlpha = 0.38; ctx.fill();
+        ctx.globalAlpha = 0.7; ctx.strokeStyle = P.soft;
+        ctx.beginPath(); ctx.moveTo(x0, top); ctx.lineTo(x0 + 0.018 * W, top); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // penstocks, powerhouses and moving water
+      var flow = 12 * u;                         // integer laps per loop -> seamless
+      for (k = 0; k < 2; k++) {
+        var pen = PEN[k];
+        ctx.strokeStyle = P.grid; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(pen[0][0] * W, pen[0][1] * Hs);
+        ctx.lineTo(pen[1][0] * W, pen[1][1] * Hs); ctx.lineTo(pen[2][0] * W, pen[2][1] * Hs); ctx.stroke();
+        ctx.lineWidth = 1;
+        for (var j = 0; j < NPART; j++) {
+          var off = j / NPART;
+          if (pe > 0.01) {
+            var s1 = off - flow; s1 -= Math.floor(s1);          // up the pipe
+            ptOnPen(pen, s1, W, Hs, TMP);
+            ctx.globalAlpha = pe * Math.sin(Math.PI * s1); ctx.fillStyle = P.sand;
+            ctx.beginPath(); ctx.arc(TMP[0], TMP[1], 1.6, 0, TAU); ctx.fill();
+          }
+          if (ge > 0.01) {
+            var s2 = off + 1.5 * flow; s2 -= Math.floor(s2);    // down the pipe
+            ptOnPen(pen, s2, W, Hs, TMP);
+            ctx.globalAlpha = ge * Math.sin(Math.PI * s2); ctx.fillStyle = P.teal;
+            ctx.beginPath(); ctx.arc(TMP[0], TMP[1], 1.7, 0, TAU); ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+        // powerhouse: pump-turbine
+        var px = pen[2][0] * W, py = pen[2][1] * Hs;
+        if (ge > 0.01) {
+          ctx.shadowColor = P.teal; ctx.shadowBlur = 8 * ge;
+          ctx.globalAlpha = ge; ctx.fillStyle = P.teal;
+          ctx.beginPath(); ctx.arc(px, py, 4, 0, TAU); ctx.fill();
+          ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+        }
+        ctx.fillStyle = P.deep; ctx.strokeStyle = pe > 0.01 ? P.sand : (ge > 0.01 ? P.teal : P.soft);
+        ctx.globalAlpha = 0.6 + 0.4 * Math.max(pe, ge);
+        ctx.beginPath(); ctx.arc(px, py, 3.2, 0, TAU); ctx.fill(); ctx.stroke();
+        var ra = TAU * (pe > ge ? -flow : flow) / 6;
+        ctx.beginPath();
+        ctx.moveTo(px - 2.2 * Math.cos(ra), py - 2.2 * Math.sin(ra)); ctx.lineTo(px + 2.2 * Math.cos(ra), py + 2.2 * Math.sin(ra));
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // steady outflow from the lowest dam to the town
+      var ox0 = 0.84 * W, ox1 = 0.905 * W, oy = 0.91 * Hs - 3;
+      ctx.strokeStyle = P.teal; ctx.globalAlpha = 0.35;
+      ctx.beginPath(); ctx.moveTo(ox0, 0.86 * Hs); ctx.lineTo(ox0 + 0.01 * W, oy); ctx.lineTo(ox1, oy); ctx.stroke();
+      ctx.fillStyle = P.teal;
+      for (j = 0; j < 4; j++) {
+        var q = j / 4 + 8 * u; q -= Math.floor(q);
+        ctx.globalAlpha = 0.9 * Math.sin(Math.PI * q);
+        ctx.beginPath(); ctx.arc(ox0 + 0.01 * W + (ox1 - ox0 - 0.01 * W) * q, oy, 1.4, 0, TAU); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // town glyph: three small houses, windows lit at night
+      var tx = 0.915 * W, ty = 0.91 * Hs;
+      var HW = [[0, 7, 8], [9, 9, 11], [20, 7, 7]];
+      ctx.strokeStyle = P.text; ctx.globalAlpha = 0.8;
+      for (j = 0; j < 3; j++) {
+        var hx = tx + HW[j][0] * (small ? 0.8 : 1), hw = HW[j][1], hh2 = HW[j][2];
+        ctx.beginPath();
+        ctx.moveTo(hx, ty); ctx.lineTo(hx, ty - hh2 + 3); ctx.lineTo(hx + hw / 2, ty - hh2 - 1);
+        ctx.lineTo(hx + hw, ty - hh2 + 3); ctx.lineTo(hx + hw, ty); ctx.stroke();
+        ctx.fillStyle = P.sand; ctx.globalAlpha = 0.25 + 0.6 * (1 - day);
+        ctx.fillRect(hx + hw / 2 - 1, ty - hh2 / 2 - 1, 2, 2);
+        ctx.globalAlpha = 0.8;
+      }
+      ctx.globalAlpha = 1;
+
+      // labels
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = MONO; ctx.fillStyle = P.soft; ctx.textAlign = 'left';
+      for (k = 0; k < 3; k++) {
+        var bb = BAS[k];
+        if (k === 2) { ctx.textAlign = 'right'; ctx.fillText(bb.name, bb.rt * W - 2, bb.ry * Hs - 6); ctx.textAlign = 'left'; }
+        else ctx.fillText(bb.name, bb.lt * W + 2, bb.ry * Hs - 6);
+      }
+      ctx.textAlign = 'right'; ctx.fillStyle = P.text; ctx.globalAlpha = 0.85;
+      if (small) {
+        ctx.fillText('water', W - 12, 0.91 * Hs - 27);
+        ctx.fillText('supply', W - 12, 0.91 * Hs - 16);
+      } else ctx.fillText('water supply', W - 12, Hs - 3);
+      ctx.globalAlpha = 1;
+
+      // mode label (fades with the operating mode)
+      ctx.font = MONO11; ctx.textAlign = 'left';
+      var mx = 0.25 * W, my = 0.15 * Hs;
+      if (pe > 0.02) {
+        ctx.globalAlpha = pe; ctx.fillStyle = P.sand;
+        ctx.fillText('pump at low price', mx, my);
+        ctx.font = MONO; ctx.fillStyle = P.soft;
+        ctx.fillText('water uphill', mx, my + 13);
+      }
+      ctx.font = MONO11;
+      if (ge > 0.02) {
+        ctx.globalAlpha = ge; ctx.fillStyle = P.teal;
+        ctx.fillText('generate at peak', mx, my);
+        ctx.font = MONO; ctx.fillStyle = P.soft;
+        ctx.fillText('water through turbines', mx, my + 13);
+      }
+      ctx.globalAlpha = 1;
+
+      // price strip
+      var cx0 = 12, cx1 = W - 12, cy0 = Hs + 12, cy1 = H - 24;
+      var cw = cx1 - cx0, ch = cy1 - cy0;
+      function X(hr) { return cx0 + cw * hr / 24; }
+      // operating windows
+      ctx.globalAlpha = 0.10; ctx.fillStyle = P.sand; ctx.fillRect(X(0.45), cy0, X(5.55) - X(0.45), ch);
+      ctx.globalAlpha = 0.13; ctx.fillStyle = P.teal; ctx.fillRect(X(17.15), cy0, X(21.05) - X(17.15), ch);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = P.grid; ctx.beginPath(); ctx.moveTo(cx0, cy1 + 0.5); ctx.lineTo(cx1, cy1 + 0.5); ctx.stroke();
+      // curve
+      ctx.strokeStyle = P.sand; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      for (k = 0; k < NP; k++) {
+        var xx = X(k * 0.5), yy = cy1 - 2 - (ch - 4) * PR[k];
+        if (k) ctx.lineTo(xx, yy); else ctx.moveTo(xx, yy);
+      }
+      ctx.stroke(); ctx.lineWidth = 1;
+      // ticks
+      ctx.font = MONO; ctx.fillStyle = P.soft; ctx.textAlign = 'center';
+      var TK = small ? [0, 6, 12] : [0, 6, 12, 18];   // bottom-right corner holds the family tag
+      for (k = 0; k < TK.length; k++) {
+        var tx2 = X(TK[k]);
+        ctx.fillText((TK[k] < 10 ? '0' : '') + TK[k] + ':00', Math.min(Math.max(tx2, cx0 + 15), cx1 - 15), H - 12);
+      }
+      ctx.textAlign = 'right'; ctx.globalAlpha = 0.8;
+      ctx.fillText('illustrative', W - 12, H - 12);
+      ctx.globalAlpha = 1;
+      // strip labels: the two operating windows and the curve itself, so the still frame shows the whole day
+      ctx.textAlign = 'center'; ctx.fillStyle = P.sand;
+      ctx.fillText('pump', X(3), cy0 + 9);
+      ctx.textAlign = 'right'; ctx.fillStyle = P.teal;
+      ctx.fillText('generate', X(17.15) - 4, cy0 + 9);
+      ctx.textAlign = 'left'; ctx.fillStyle = P.soft;
+      ctx.fillText(small ? 'price, 24 h' : 'electricity price over 24 h', X(6) + 4, cy0 + 9);
+      // time marker
+      var mxp = X(h), myp = cy1 - 2 - (ch - 4) * price(h);
+      ctx.strokeStyle = P.text; ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.moveTo(mxp, cy0 - 2); ctx.lineTo(mxp, cy1); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = P.text;
+      ctx.beginPath(); ctx.arc(mxp, myp, 2.6, 0, TAU); ctx.fill();
+      ctx.textAlign = 'left';
+    }
+  };
+})();
+</script>
+<script>
+(function () {
+  var root = document.documentElement;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- theme toggle ---------- */
+  var themeBtn = document.getElementById('theme-btn');
+  function currentTheme() { return root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'); }
+  function syncBtn() { themeBtn.setAttribute('aria-label', currentTheme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'); }
+  themeBtn.addEventListener('click', function () {
+    var next = currentTheme() === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try { localStorage.setItem('kh-theme', next); } catch (e) {}
+    syncBtn(); onTheme();
+  });
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () { syncBtn(); onTheme(); });
+  syncBtn();
+
+  /* ---------- scroll depth: abyss shading, gauge dot, active section ---------- */
+  var abyss = document.querySelector('.abyss');
+  var gaugeDot = document.querySelector('.gauge-dot');
+  var nav = document.querySelector('.nav');
+  var ids = ['top', 'research', 'projects', 'publications', 'experience', 'contact'];
+  var sections = ids.map(function (id) { return document.getElementById(id); });
+  var gaugeLinks = Array.prototype.slice.call(document.querySelectorAll('.gauge a'));
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+  var lastActive = -1, ticking = false;
+  function update() {
+    ticking = false;
+    var max = document.documentElement.scrollHeight - innerHeight;
+    var p = max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
+    abyss.style.setProperty('--progress', (p * 0.9).toFixed(3));
+    var active = 0;
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i] && sections[i].getBoundingClientRect().top < innerHeight * 0.35) active = i;
+    }
+    if (scrollY >= max - 2) active = sections.length - 1;
+    if (active !== lastActive) {
+      lastActive = active;
+      gaugeLinks.forEach(function (a, i) { a.setAttribute('aria-current', i === active ? 'true' : 'false'); });
+      var activeNav = null;
+      navLinks.forEach(function (a) {
+        var on = a.getAttribute('href') === '#' + ids[active];
+        a.setAttribute('aria-current', on ? 'true' : 'false');
+        if (on) activeNav = a;
+      });
+      if (activeNav && nav.scrollWidth > nav.clientWidth) nav.scrollTo({ left: activeNav.offsetLeft - nav.offsetLeft - 8, behavior: reduce ? 'auto' : 'smooth' });
+      var li = gaugeLinks[active] && gaugeLinks[active].parentElement;
+      if (li && gaugeDot) gaugeDot.style.setProperty('--dot-y', (li.offsetTop + 4) + 'px');
+    }
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+  update();
+
+  /* ---------- copy email ---------- */
+  var copyBtn = document.getElementById('copy-btn');
+  var emailEl = document.getElementById('email');
+  var statusEl = document.getElementById('copy-status');
+  var tmr;
+  function say(m) {
+    copyBtn.textContent = m; statusEl.textContent = m;
+    clearTimeout(tmr); tmr = setTimeout(function () { copyBtn.textContent = 'Copy email'; }, 2600);
+  }
+  function selectIt() {
+    var r = document.createRange(); r.selectNodeContents(emailEl);
+    var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    try { if (document.execCommand('copy')) return say('Copied'); } catch (e) {}
+    say('Selected, press ' + (/Mac|iP/.test(navigator.platform) ? '⌘' : 'Ctrl') + '+C');
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = emailEl.textContent.trim();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { say('Copied'); }, selectIt);
+    } else { selectIt(); }
+  });
+
+  /* ---------- scene runner: one loop for the hero and every project canvas ---------- */
+  var scenes = [];
+  var start = performance.now(), running = false;
+  function makeScene(canvas, frame) {
+    var s = { el: canvas, ctx: canvas.getContext('2d'), W: 1, H: 1, visible: true, broken: false,
+              ptr: { x: 0.5, y: 0.5, active: false }, frame: frame, still: 0 };
+    s.resize = function () {
+      var r = canvas.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+      s.W = Math.max(1, r.width); s.H = Math.max(1, r.height);
+      canvas.width = Math.round(s.W * dpr); canvas.height = Math.round(s.H * dpr);
+      s.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    s.draw = function (t) {
+      if (s.broken) return;
+      try { s.frame(s, t); } catch (e) { s.broken = true; if (window.console) console.warn('scene stopped', e); }
+    };
+    var host = canvas.parentElement;
+    host.addEventListener('pointermove', function (e) {
+      var r = canvas.getBoundingClientRect();
+      s.ptr.x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      s.ptr.y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+      s.ptr.active = true;
+    });
+    host.addEventListener('pointerleave', function () { s.ptr.active = false; });
+    s.resize();
+    scenes.push(s);
+    return s;
+  }
+  function loop(now) {
+    var t = (now - start) / 1000, any = false;
+    if (!document.hidden) scenes.forEach(function (s) { if (s.visible) { s.draw(t); any = true; } });
+    if (any && !document.hidden) requestAnimationFrame(loop); else running = false;
+  }
+  function kick() { if (!running && !reduce) { running = true; requestAnimationFrame(loop); } }
+  function drawStill(s) { s.draw(s.still); }
+  function onTheme() { readColors(); scenes.forEach(function (s) { if (reduce) drawStill(s); }); }
+
+  /* ---------- hero: animated reservoir water column (uses the page theme) ---------- */
+  var C = {};
+  function readColors() {
+    var st = getComputedStyle(root);
+    ['--sky-top', '--sky-low', '--hills', '--water-top', '--water-deep', '--ink', '--cv-text', '--cv-sand', '--cv-chl', '--cv-halo']
+      .forEach(function (n) { C[n] = st.getPropertyValue(n).trim(); });
+  }
+  readColors();
+  var parts = [];
+  for (var i = 0; i < 90; i++) {
+    var g = (Math.random() + Math.random() + Math.random() - 1.5) * 0.9;
+    parts.push({ x: Math.random(), z: i < 70 ? 3.65 + g : Math.random() * 5, r: 0.8 + Math.random() * 1.6, s: 0.2 + Math.random() * 0.6, ph: Math.random() * 6.28 });
+  }
+  var castX = 0.36, droneX = 0.36;
+  function chlProfile(z) { return 0.08 + 0.05 * Math.exp(-z * 1.2) + 0.87 * Math.exp(-Math.pow((z - 3.65) / 0.42, 2)); }
+  function castDepth(t) { var c = (t % 16) / 16; var e = c < 0.62 ? c / 0.62 : 1 - (c - 0.62) / 0.38; e = 0.5 - 0.5 * Math.cos(Math.PI * e); return 0.15 + e * 4.6; }
+  function heroFrame(s, t) {
+    var ctx = s.ctx, W = s.W, H = s.H;
+    var targetX = s.ptr.active ? Math.min(0.6, Math.max(0.2, s.ptr.x)) : 0.36;
+    if (!reduce) { castX += (targetX - castX) * 0.04; droneX += (targetX - droneX) * 0.06; }
+    var zp = reduce ? 4.4 : castDepth(t);
+    var skyFrac = 0.17, axisL = 46, top = H * skyFrac;
+    function zy(z) { return top + (z / 5) * (H - top - 14); }
+    function alpha(color, a) { ctx.globalAlpha = a; return color; }
+    function label(txt, x, y, col, a) {
+      ctx.save(); ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.globalAlpha = 0.75; ctx.strokeStyle = C['--cv-halo'];
+      ctx.strokeText(txt, x, y); ctx.globalAlpha = a == null ? 1 : a; ctx.fillStyle = col; ctx.fillText(txt, x, y); ctx.restore();
+    }
+    ctx.clearRect(0, 0, W, H); ctx.globalAlpha = 1;
+    // sky with a low sun over the ridge
+    var sky = ctx.createLinearGradient(0, 0, 0, top);
+    sky.addColorStop(0, C['--sky-top']); sky.addColorStop(1, C['--sky-low']);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, top);
+    var sun = ctx.createRadialGradient(W * 0.8, top, 0, W * 0.8, top, W * 0.32);
+    sun.addColorStop(0, C['--cv-sand']); sun.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.35; ctx.fillStyle = sun; ctx.fillRect(0, 0, W, top); ctx.globalAlpha = 1;
+    ctx.fillStyle = alpha(C['--hills'], 0.95);
+    ctx.beginPath(); ctx.moveTo(0, top);
+    for (var x = 0; x <= W; x += 6) {
+      var y = top - (H * 0.035) - Math.sin(x * 0.011 + 1.3) * H * 0.022 - Math.sin(x * 0.031) * H * 0.012 - Math.max(0, Math.sin(x * 0.006 - 0.4)) * H * 0.03;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, top); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    // water body
+    var wat = ctx.createLinearGradient(0, top, 0, H);
+    wat.addColorStop(0, C['--water-top']); wat.addColorStop(1, C['--water-deep']);
+    ctx.fillStyle = wat; ctx.fillRect(0, top, W, H - top);
+    // thermocline shimmer
+    var tcy0 = zy(1.6), tcy1 = zy(2.4);
+    var tc = ctx.createLinearGradient(0, tcy0, 0, tcy1);
+    tc.addColorStop(0, 'rgba(255,255,255,0)'); tc.addColorStop(0.5, 'rgba(255,255,255,0.07)'); tc.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = tc; ctx.fillRect(0, tcy0, W, tcy1 - tcy0);
+    // chlorophyll maximum band
+    var cy0 = zy(3.4), cy1 = zy(3.9);
+    var cb = ctx.createLinearGradient(0, cy0 - 26, 0, cy1 + 26);
+    cb.addColorStop(0, 'rgba(0,0,0,0)'); cb.addColorStop(0.5, C['--cv-chl']); cb.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = cb; ctx.globalAlpha = 0.28 + 0.06 * Math.sin(t * 0.8);
+    ctx.fillRect(0, cy0 - 26, W, cy1 - cy0 + 52); ctx.globalAlpha = 1;
+    // particles
+    for (var k = 0; k < parts.length; k++) {
+      var p = parts[k];
+      var px = ((p.x + t * 0.004 * p.s) % 1) * W;
+      var py = zy(p.z) + Math.sin(t * p.s + p.ph) * 3;
+      ctx.fillStyle = alpha(C['--cv-chl'], p.z > 3 && p.z < 4.3 ? 0.75 : 0.35);
+      ctx.beginPath(); ctx.arc(px, py, p.r, 0, 6.283); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // drone light cone down to the sensed layer (1 optical depth)
+    var dX = droneX * W, dY = top * 0.42 + Math.sin(t * 1.7) * 3, sY = zy(1);
+    var cone = ctx.createLinearGradient(0, dY, 0, sY);
+    cone.addColorStop(0, 'rgba(255,240,200,0.0)'); cone.addColorStop(0.35, 'rgba(255,240,200,0.22)'); cone.addColorStop(1, 'rgba(255,240,200,0.0)');
+    ctx.fillStyle = cone;
+    ctx.beginPath(); ctx.moveTo(dX - 6, dY + 6); ctx.lineTo(dX + 6, dY + 6); ctx.lineTo(dX + 70, sY); ctx.lineTo(dX - 70, sY); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = C['--ink']; ctx.fillStyle = C['--ink']; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(dX - 16, dY); ctx.lineTo(dX + 16, dY); ctx.stroke();
+    ctx.fillRect(dX - 6, dY - 3, 12, 7);
+    var spin = Math.abs(Math.sin(t * 22)) * 6 + 3;
+    ctx.beginPath(); ctx.moveTo(dX - 16 - spin, dY - 4); ctx.lineTo(dX - 16 + spin, dY - 4); ctx.moveTo(dX + 16 - spin, dY - 4); ctx.lineTo(dX + 16 + spin, dY - 4); ctx.stroke();
+    // water surface ripple
+    ctx.strokeStyle = alpha(C['--cv-text'], 0.55); ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (var sx = 0; sx <= W; sx += 4) { var sy = top + Math.sin(sx * 0.05 + t * 1.6) * 1.6; if (sx === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    // profile panel on the right, below the waterline and flush to the edges
+    var x0 = W * 0.72, x1 = W - 16;
+    ctx.fillStyle = alpha(C['--water-deep'], 0.45);
+    ctx.fillRect(x0 - 10, zy(0) + 3, W - (x0 - 10), H - zy(0) - 3); ctx.globalAlpha = 1;
+    // sensed layer line
+    ctx.setLineDash([5, 5]); ctx.strokeStyle = alpha(C['--cv-sand'], 0.95); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(axisL, sY); ctx.lineTo(W * 0.66, sY); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    // labels with a halo so particles never cut through them
+    ctx.font = '500 11px "IBM Plex Mono", Consolas, monospace'; ctx.textAlign = 'left';
+    label('what sensors see (z90)', axisL + 8, sY - 6, C['--cv-sand']);
+    label('thermocline', axisL + 8, (tcy0 + tcy1) / 2 + 4, C['--cv-text'], 0.9);
+    label('chlorophyll maximum', axisL + 8, cy0 - 8, C['--cv-chl']);
+    label('median 3.4 to 3.9 optical depths', axisL + 8, cy1 + 16, C['--cv-chl']);
+    // boat + CTD cable + profiler
+    var bX = castX * W + 26;
+    ctx.fillStyle = C['--ink'];
+    ctx.beginPath(); ctx.moveTo(bX - 18, top - 5); ctx.lineTo(bX + 18, top - 5); ctx.lineTo(bX + 12, top + 3); ctx.lineTo(bX - 12, top + 3); ctx.closePath(); ctx.fill();
+    ctx.fillRect(bX - 1, top - 16, 2, 11);
+    var pY = zy(zp);
+    ctx.strokeStyle = alpha(C['--cv-text'], 0.75); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(bX, top - 14); ctx.lineTo(bX + 10, top - 16); ctx.lineTo(bX + 10, pY - 9); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = C['--cv-sand'];
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bX + 6, pY - 9, 8, 22, 3); else ctx.rect(bX + 6, pY - 9, 8, 22); ctx.fill();
+    ctx.font = '500 10px "IBM Plex Mono", Consolas, monospace';
+    if (W > 380) label('CTD', bX + 18, pY + 4, C['--cv-text']);
+    // depth axis
+    ctx.strokeStyle = alpha(C['--cv-text'], 0.4); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(axisL - 10, zy(0)); ctx.lineTo(axisL - 10, zy(5)); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.textAlign = 'right';
+    for (var z = 0; z <= 5; z++) {
+      var ty = zy(z);
+      label(String(z), axisL - 16, ty + 3.5, C['--cv-text'], 0.85);
+      ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.moveTo(axisL - 13, ty); ctx.lineTo(axisL - 7, ty); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    ctx.save(); ctx.translate(12, (zy(0) + zy(5)) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center';
+    label('optical depth', 0, 0, C['--cv-text'], 0.85); ctx.restore();
+    // profile trace
+    ctx.strokeStyle = alpha(C['--cv-text'], 0.35);
+    ctx.beginPath(); ctx.moveTo(x0, zy(0) + 3); ctx.lineTo(x0, zy(5)); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+    label('Chl-a', x0 + 6, zy(5) - 18, C['--cv-text'], 0.9);
+    label('illustrative', x0 + 6, zy(5) - 5, C['--cv-text'], 0.65);
+    ctx.strokeStyle = C['--cv-chl']; ctx.lineWidth = 2;
+    ctx.beginPath();
+    var zEnd = Math.max(0.02, zp);
+    for (var zz = 0; zz <= zEnd; zz += 0.04) {
+      var vx = x0 + chlProfile(zz) * (x1 - x0 - 6), vy = zy(zz);
+      if (zz === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+    }
+    ctx.stroke();
+    var hx = x0 + chlProfile(zEnd) * (x1 - x0 - 6);
+    ctx.fillStyle = C['--cv-sand']; ctx.beginPath(); ctx.arc(hx, zy(zEnd), 3.5, 0, 6.283); ctx.fill();
+  }
+  var hero = makeScene(document.getElementById('column'), heroFrame);
+  hero.still = 0;
+
+  /* ---------- project scenes ---------- */
+  var P = { top: '#0f3a46', deep: '#061c25', text: '#eef6f4', soft: '#9fbcbb', grid: '#1f4a56', teal: '#5cc8bc',
+            chl: '#c6e27e', sand: '#f2c27b', coral: '#ff8f7a', sky: '#2a4a52' };
+  var lib = window.KHAnims || {};
+  Array.prototype.forEach.call(document.querySelectorAll('canvas[data-scene]'), function (cv) {
+    var A = lib[cv.getAttribute('data-scene')];
+    if (!A) { cv.parentElement.hidden = true; return; }
+    if (A.alt) cv.setAttribute('aria-label', A.alt);
+    var s = makeScene(cv, function (sc, t) { A.draw(sc.ctx, sc.W, sc.H, t, P, sc.ptr); });
+    s.still = A.still != null ? A.still : 0;
+  });
+
+  /* ---------- visibility, resize, reduced motion ---------- */
+  scenes.forEach(function (s) {
+    if (reduce) drawStill(s); else s.draw(0);
+    if ('ResizeObserver' in window) new ResizeObserver(function () { s.resize(); if (reduce) drawStill(s); else s.draw((performance.now() - start) / 1000); }).observe(s.el);
+    if ('IntersectionObserver' in window) {
+      s.visible = false;
+      new IntersectionObserver(function (es) { s.visible = es[0].isIntersecting; if (s.visible) kick(); }, { rootMargin: '80px' }).observe(s.el);
+    }
+  });
+  document.addEventListener('visibilitychange', kick);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (reduce) scenes.forEach(drawStill); });
+  kick();
+})();
+</script>
+</body>
+</html>
